@@ -40,7 +40,7 @@ export default function ChallengeScreen() {
 
       <View style={styles.bottom}>
         <View style={styles.track}>
-          <View style={[styles.fill, { width: `${(progress * 100).toFixed(1)}%` as any }]} />
+          <View style={[styles.fill, { width: `${(progress * 100).toFixed(1)}%` as any as any }]} />
         </View>
         <Subtle style={styles.copy}>Search. Read. Follow the question. You can leave the app.</Subtle>
         <Pressable style={styles.pill} onPress={() => (isPaused ? resume() : pause())}>
