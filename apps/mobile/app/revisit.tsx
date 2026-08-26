@@ -4,11 +4,13 @@ import { router } from 'expo-router';
 import { isRevisitWorthy, type Discovery } from '@intentional/domain';
 import { getDiscoveries } from '@intentional/database';
 import { getDb } from '../lib/db';
+import { pickResonant } from '../lib/resonance';
 import { Display, Body, Subtle, Label, BackBar, theme } from '@intentional/ui';
 
 export default function RevisitScreen() {
   const [pool, setPool] = useState<Discovery[]>([]);
   const [current, setCurrent] = useState<Discovery | null>(null);
+  const [byEcho, setByEcho] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [memory, setMemory] = useState('');
   const [revealed, setRevealed] = useState(false);
@@ -17,8 +19,10 @@ export default function RevisitScreen() {
     void (async () => {
       const all = await getDiscoveries(await getDb());
       const worthy = all.filter(d => isRevisitWorthy(d.createdAt, new Date()));
+      const picked = await pickResonant(worthy);
       setPool(worthy);
-      setCurrent(worthy[0] ?? null);
+      setCurrent(picked.discovery);
+      setByEcho(picked.byEcho);
       setLoaded(true);
     })();
   }, []);
@@ -26,6 +30,7 @@ export default function RevisitScreen() {
   function another() {
     if (pool.length === 0) return;
     setCurrent(pool[Math.floor(Math.random() * pool.length)]);
+    setByEcho(false);
     setMemory('');
     setRevealed(false);
   }
@@ -53,6 +58,7 @@ export default function RevisitScreen() {
       <Body style={styles.ornament}>❦</Body>
       <Label style={styles.eyebrow}>REVISIT</Label>
       <Subtle style={styles.date}>{new Date(current.createdAt).toLocaleDateString()} · {current.category}</Subtle>
+      {byEcho && !revealed && <Subtle style={styles.echoNote}>It echoes your recent writing.</Subtle>}
       <Display style={styles.headline}>"{current.prompt}"</Display>
 
       {!revealed ? (
@@ -99,6 +105,7 @@ const styles = StyleSheet.create({
   ornament: { color: theme.colors.bronze, fontSize: 24, textAlign: 'center', marginTop: theme.spacing.sm },
   eyebrow: { color: theme.colors.bronze, letterSpacing: 1.5, textAlign: 'center' },
   date: { textAlign: 'center', letterSpacing: 1 },
+  echoNote: { textAlign: 'center', fontStyle: 'italic', color: theme.colors.bronze },
   headline: { fontFamily: theme.fonts.displayItalic, fontSize: 30, lineHeight: 40, textAlign: 'center' },
   ask: { fontFamily: theme.fonts.bodySemibold, marginTop: theme.spacing.sm },
   input: { borderWidth: 1, borderColor: theme.colors.divider, borderRadius: theme.radius.md, padding: theme.spacing.md, fontSize: 17, fontFamily: theme.fonts.body, color: theme.colors.ink, minHeight: 130, textAlignVertical: 'top', backgroundColor: theme.colors.surface, lineHeight: 26 },

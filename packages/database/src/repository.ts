@@ -19,7 +19,7 @@ export async function getJournalEntry(db: SQLiteDatabase, id: string): Promise<J
 
 export async function saveDiscovery(db: SQLiteDatabase, d: Discovery): Promise<void> {
   await db.runAsync(
-    `INSERT INTO discoveries (id, userId, category, prompt, intention, findings, sources, folderName, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO discoveries (id, userId, category, prompt, intention, findings, sources, folderName, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [d.id, d.userId, d.category, d.prompt, d.intention ?? null, JSON.stringify(d.findings), d.sources ?? null, d.folderName ?? null, d.createdAt]
   );
 }

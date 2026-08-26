@@ -4,12 +4,19 @@ import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { ZOOMOUT_PROMPTS, type Discovery } from '@intentional/domain';
+import type { ResonantMatch } from '@intentional/resonance';
 import { getDiscoveries, saveDiscovery } from '@intentional/database';
 import { getDb } from '../lib/db';
+import { resonantWith, discoveryText } from '../lib/resonance';
 import { Display, Body, Subtle, Label, BackBar, theme } from '@intentional/ui';
+
+function snippet(t: string): string {
+  return t.length > 140 ? `${t.slice(0, 140)}…` : t;
+}
 
 export default function ZoomOutScreen() {
   const [subject, setSubject] = useState<Discovery | null | undefined>(undefined);
+  const [echo, setEcho] = useState<ResonantMatch | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [kept, setKept] = useState(false);
@@ -20,6 +27,14 @@ export default function ZoomOutScreen() {
       setSubject(all[0] ?? null);
     })();
   }, []);
+
+  useEffect(() => {
+    if (!subject) return;
+    void (async () => {
+      const m = await resonantWith(discoveryText(subject), { excludeRawId: subject.id, threshold: 0.1 });
+      setEcho(m);
+    })();
+  }, [subject]);
 
   async function handleKeep() {
     if (!subject) return;
@@ -62,6 +77,14 @@ export default function ZoomOutScreen() {
         <Label style={styles.eyebrow}>ZOOM OUT</Label>
         <Subtle style={styles.subjectLabel}>RECENTLY KEPT</Subtle>
         <Display style={styles.subject} numberOfLines={3}>"{subject.prompt}"</Display>
+
+        {echo !== null && (
+          <View style={styles.echoCard}>
+            <Subtle style={styles.echoLabel}>FROM YOUR LIBRARY — IT ECHOES</Subtle>
+            <Body style={styles.echoText} numberOfLines={3}>"{snippet(echo.note.text)}"</Body>
+            <Subtle style={styles.echoDate}>{new Date(echo.note.createdAt).toLocaleDateString()}</Subtle>
+          </View>
+        )}
 
         <View style={styles.prompts}>
           {ZOOMOUT_PROMPTS.map(p => {
@@ -109,6 +132,10 @@ const styles = StyleSheet.create({
   eyebrow: { color: theme.colors.ivory, opacity: 0.6, letterSpacing: 1.5, marginTop: theme.spacing.sm },
   subjectLabel: { color: theme.colors.ivory, opacity: 0.5, letterSpacing: 1.5 },
   subject: { color: theme.colors.ivory, fontSize: 28, lineHeight: 36 },
+  echoCard: { borderWidth: 1, borderColor: 'rgba(247,245,240,0.3)', borderRadius: theme.radius.md, padding: 18, gap: 8, backgroundColor: 'rgba(247,245,240,0.06)' },
+  echoLabel: { color: theme.colors.ivory, opacity: 0.55, letterSpacing: 1.5, fontSize: 10 },
+  echoText: { color: theme.colors.ivory, fontFamily: theme.fonts.displayItalic, fontSize: 17, lineHeight: 25, opacity: 0.95 },
+  echoDate: { color: theme.colors.ivory, opacity: 0.5, fontSize: 12, letterSpacing: 1 },
   prompts: { gap: 14, marginTop: theme.spacing.sm },
   card: { borderWidth: 1, borderColor: 'rgba(247,245,240,0.22)', borderRadius: theme.radius.md, overflow: 'hidden' },
   cardActive: { borderColor: theme.colors.ivory },

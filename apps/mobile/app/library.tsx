@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View, Pressable, Text } from 'react-native';
+import { router } from 'expo-router';
 import { getDiscoveries } from '@intentional/database';
 import { getDb } from '../lib/db';
 import type { Discovery } from '@intentional/domain';
@@ -32,24 +33,24 @@ export default function LibraryScreen() {
 
       {visible.length === 0 && <Subtle style={{ marginTop: 20 }}>Nothing here yet.</Subtle>}
       {visible.map(d => (
-        <View key={d.id} style={styles.card}>
-          <Label style={styles.cardEyebrow}>{d.folderName || d.category}</Label>
-          <Body style={styles.prompt}>"{d.prompt}"</Body>
-          {Object.values(d.findings).filter(t => t && t.trim().length > 0).map((text, i) => (
-            <Body key={i} style={styles.finding}>{text}</Body>
-          ))}
-          <View style={styles.rule} />
-          <View style={styles.footer}>
-            <Subtle style={styles.date}>{new Date(d.createdAt).toLocaleDateString()}</Subtle>
-            {d.sources ? <Subtle style={styles.sources}>{d.sources}</Subtle> : null}
+        <Pressable key={d.id} onPress={() => router.push({ pathname: '/discovery', params: { id: d.id } })}>
+          <View style={styles.card}>
+            <Label style={styles.cardEyebrow}>{d.folderName || d.category}</Label>
+            <Body style={styles.prompt}>"{d.prompt}"</Body>
+            {Object.values(d.findings).filter(t => t && t.trim().length > 0).map((text, i) => (
+              <Body key={i} style={styles.finding}>{text}</Body>
+            ))}
+            <View style={styles.rule} />
+            <View style={styles.footer}>
+              <Subtle style={styles.date}>{new Date(d.createdAt).toLocaleDateString()}</Subtle>
+              {d.sources ? <Subtle style={styles.sources}>{d.sources}</Subtle> : null}
+            </View>
           </View>
-        </View>
+        </Pressable>
       ))}
     </ScrollView>
   );
 }
-
-import { router } from 'expo-router';
 
 const styles = StyleSheet.create({
   container: { padding: theme.spacing.lg, gap: theme.spacing.md, paddingTop: 60, paddingBottom: 90 },
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: theme.colors.ink, borderColor: theme.colors.ink },
   chipText: { fontFamily: theme.fonts.bodyMedium, fontSize: 13, color: theme.colors.grey },
   chipTextActive: { color: theme.colors.ivory },
-  card: { backgroundColor: theme.colors.surface, padding: 24, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.divider, gap: 12 },
+  card: { backgroundColor: theme.colors.surface, padding: 24, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.divider, gap: 12, marginBottom: 16 },
   cardEyebrow: { letterSpacing: 1.2, color: theme.colors.bronze, fontSize: 10 },
   prompt: { fontFamily: theme.fonts.displayItalic, fontSize: 22, lineHeight: 30 },
   finding: { fontSize: 16, lineHeight: 24 },

@@ -25,6 +25,9 @@ importers:
       '@intentional/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@intentional/resonance':
+        specifier: workspace:*
+        version: link:../../packages/resonance
       '@intentional/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -90,6 +93,15 @@ importers:
       zod:
         specifier: ^3.24.0
         version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ~5.9.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@26.3.0)(lightningcss@1.33.0)(supports-color@8.1.1)(terser@5.50.0)
+
+  packages/resonance:
     devDependencies:
       typescript:
         specifier: ~5.9.0
