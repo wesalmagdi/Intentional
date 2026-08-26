@@ -2,6 +2,10 @@ import React from 'react';
 import { Text as RNText, TextProps, StyleSheet } from 'react-native';
 import { theme } from './theme';
 
+export function Display({ style, ...props }: TextProps) {
+  return <RNText style={[styles.display, style]} {...props} />;
+}
+
 export function Title({ style, ...props }: TextProps) {
   return <RNText style={[styles.title, style]} {...props} />;
 }
@@ -18,9 +22,46 @@ export function Subtle({ style, ...props }: TextProps) {
   return <RNText style={[styles.subtle, style]} {...props} />;
 }
 
+export function Label({ style, ...props }: TextProps) {
+  return <RNText style={[styles.label, style]} {...props} />;
+}
+
 const styles = StyleSheet.create({
-  title: { fontSize: 34, fontWeight: '700', color: theme.colors.text, letterSpacing: -0.5, lineHeight: 40 },
-  heading: { fontSize: 20, fontWeight: '600', color: theme.colors.text, letterSpacing: -0.2 },
-  body: { fontSize: 16, lineHeight: 24, color: theme.colors.text },
-  subtle: { fontSize: 14, color: theme.colors.subtle, lineHeight: 20, letterSpacing: 0.1 },
+  display: {
+    fontFamily: theme.fonts.display,
+    fontSize: 34,
+    lineHeight: 42,
+    color: theme.colors.ink,
+  },
+  title: {
+    fontFamily: theme.fonts.display,
+    fontSize: 28,
+    lineHeight: 36,
+    color: theme.colors.ink,
+  },
+  heading: {
+    fontFamily: theme.fonts.display,
+    fontSize: 20,
+    lineHeight: 28,
+    color: theme.colors.ink,
+  },
+  body: {
+    fontFamily: theme.fonts.body,
+    fontSize: 16,
+    lineHeight: 26,
+    color: theme.colors.ink,
+  },
+  subtle: {
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
+    lineHeight: 21,
+    color: theme.colors.grey,
+  },
+  label: {
+    fontFamily: theme.fonts.bodySemibold,
+    fontSize: 11,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    color: theme.colors.grey,
+  },
 });

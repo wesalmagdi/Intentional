@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
+    "@expo-google-fonts/source-serif-4": "^0.4.1",
     "@intentional/database": "workspace:*",
     "@intentional/domain": "workspace:*",
     "@intentional/ui": "workspace:*",

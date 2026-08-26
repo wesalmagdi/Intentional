@@ -1,12 +1,11 @@
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
-import { Body } from './Text';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import { theme } from './theme';
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'ghost';
+  variant?: 'primary' | 'ghost' | 'ondark';
 }
 
 export function Button({ title, onPress, variant = 'primary' }: ButtonProps) {
@@ -15,39 +14,58 @@ export function Button({ title, onPress, variant = 'primary' }: ButtonProps) {
       onPress={onPress}
       style={({ pressed }) => [
         styles.base,
-        variant === 'primary' ? styles.primary : styles.ghost,
+        variant === 'primary' && styles.primary,
+        variant === 'ghost' && styles.ghost,
+        variant === 'ondark' && styles.onDark,
         pressed && styles.pressed,
       ]}
     >
-      <Body style={variant === 'primary' ? styles.primaryText : styles.ghostText}>
+      <Text
+        style={[
+          styles.text,
+          variant === 'primary' && styles.primaryText,
+          variant === 'ghost' && styles.ghostText,
+          variant === 'ondark' && styles.onDarkText,
+        ]}
+      >
         {title}
-      </Body>
+      </Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
-    paddingVertical: theme.spacing.sm,
+    paddingVertical: 14,
     paddingHorizontal: theme.spacing.md,
     borderRadius: theme.radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primary: {
-    backgroundColor: theme.colors.accent,
+    backgroundColor: theme.colors.bronze,
   },
   ghost: {
     backgroundColor: 'transparent',
   },
+  onDark: {
+    backgroundColor: theme.colors.ivory,
+  },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.75,
+  },
+  text: {
+    fontFamily: theme.fonts.bodySemibold,
+    fontSize: 15,
+    letterSpacing: 0.2,
   },
   primaryText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: theme.colors.ivory,
   },
   ghostText: {
-    color: theme.colors.accent,
+    color: theme.colors.bronze,
+  },
+  onDarkText: {
+    color: theme.colors.forest,
   },
 });

@@ -1,22 +1,27 @@
 export const theme = {
   colors: {
-    background: '#FAF9F6', // Warm off-white (paper)
-    surface: '#FFFFFF',
-    text: '#1C1917',       // Deep stone
-    subtle: '#78716C',     // Muted stone
-    accent: '#292524',     // Dark stone for buttons
-    border: '#E7E5E4',     // Soft stone border
-    highlight: '#F5F5F4',  // Very light stone for inputs
+    background: '#FCFBF8',
+    surface: '#F7F5F0',
+    ink: '#242321',
+    grey: '#6F6B63',
+    bronze: '#7A6652',
+    divider: '#E9E4DB',
+    forest: '#1E2A24',
+    forestDeep: '#141E19',
+    ivory: '#F7F5F0',
+    text: '#242321',
+    subtle: '#6F6B63',
+    accent: '#7A6652',
+    border: '#E9E4DB',
+    highlight: '#F7F5F0',
   },
-  spacing: {
-    xs: 8,
-    sm: 16,
-    md: 24,
-    lg: 32,
-    xl: 48,
+  fonts: {
+    display: 'SourceSerif4_600SemiBold',
+    displayItalic: 'SourceSerif4_600SemiBoldItalic',
+    body: 'Inter_400Regular',
+    bodyMedium: 'Inter_500Medium',
+    bodySemibold: 'Inter_600SemiBold',
   },
-  radius: {
-    sm: 12,
-    md: 16,
-  },
+  spacing: { xs: 8, sm: 12, md: 20, lg: 28, xl: 40 },
+  radius: { sm: 10, md: 14, lg: 20 },
 } as const;

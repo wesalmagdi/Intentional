@@ -12,12 +12,11 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     borderRadius: theme.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    // Premium subtle shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    borderColor: theme.colors.divider,
+    shadowColor: theme.colors.ink,
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowRadius: 12,
+    elevation: 2,
   },
 });
