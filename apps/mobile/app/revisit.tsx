@@ -1,70 +1,85 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, TextInput, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable, TextInput } from 'react-native';
 import { router } from 'expo-router';
-import { REVISIT_PROMPT, type Discovery } from '@intentional/domain';
-import { getAllDiscoveries } from '@intentional/database';
+import { isRevisitWorthy, type Discovery } from '@intentional/domain';
+import { getDiscoveries } from '@intentional/database';
 import { getDb } from '../lib/db';
-import { Title, Heading, Body, Subtle, Button, Surface, theme } from '@intentional/ui';
+import { Display, Body, Subtle, Label, theme } from '@intentional/ui';
 
 export default function RevisitScreen() {
-  const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
+  const [pool, setPool] = useState<Discovery[]>([]);
   const [current, setCurrent] = useState<Discovery | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [memory, setMemory] = useState('');
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
     void (async () => {
-      const db = await getDb();
-      const all = await getAllDiscoveries(db);
-      setDiscoveries(all);
-      if (all.length > 0) {
-        setCurrent(all[Math.floor(Math.random() * all.length)]);
-      }
+      const all = await getDiscoveries(await getDb());
+      const worthy = all.filter(d => isRevisitWorthy(d.createdAt, new Date()));
+      setPool(worthy);
+      setCurrent(worthy[0] ?? null);
+      setLoaded(true);
     })();
   }, []);
 
-  function pickAnother() {
-    if (discoveries.length === 0) return;
-    setCurrent(discoveries[Math.floor(Math.random() * discoveries.length)]);
+  function another() {
+    if (pool.length === 0) return;
+    const next = pool[Math.floor(Math.random() * pool.length)];
+    setCurrent(next);
     setMemory('');
     setRevealed(false);
   }
 
+  if (!loaded) return <View style={styles.center} />;
+
+  if (current === null) {
+    return (
+      <View style={styles.center}>
+        <Label>REVISIT</Label>
+        <Display style={styles.headline}>Nothing is ready yet.</Display>
+        <Subtle style={styles.centerSub}>Discoveries ripen for a few days{"\n"}before they're worth revisiting.</Subtle>
+        <Pressable style={styles.homeBtn} onPress={() => router.push('/')}><Body style={styles.homeText}>Home</Body></Pressable>
+      </View>
+    );
+  }
+
+  const original = Object.values(current.findings).filter(t => t && t.trim().length > 0).join('\n\n');
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Button title="Home" variant="ghost" onPress={() => router.push('/')} />
-      <Title>Revisit</Title>
+      <Label style={styles.revisitLabel}>REVISIT</Label>
+      <Subtle>{new Date(current.createdAt).toLocaleDateString()} • {current.category}</Subtle>
+      <Display style={styles.headline}>"{current.prompt}"</Display>
 
-      {current === null ? (
-        <Subtle>Nothing to revisit yet. Capture something first.</Subtle>
-      ) : (
+      {!revealed ? (
         <>
-          <Subtle>{`Captured on ${new Date(current.createdAt).toLocaleDateString()}`}</Subtle>
-          <Heading style={styles.prompt}>{REVISIT_PROMPT}</Heading>
-
+          <Body style={styles.ask}>What do you remember?</Body>
           <TextInput
             style={styles.input}
             multiline
+            placeholder="Write what stayed with you..."
+            placeholderTextColor={theme.colors.grey}
             value={memory}
             onChangeText={setMemory}
-            placeholder="Write what you remember…"
-            placeholderTextColor={theme.colors.subtle}
-            editable={!revealed}
           />
-
-          {!revealed ? (
-            <Button title="Reveal" onPress={() => setRevealed(true)} />
-          ) : (
-            <>
-              <Surface style={styles.card}>
-                <Subtle>You remembered</Subtle>
-                <Body>{memory.trim().length > 0 ? memory : '…'}</Body>
-                <Subtle style={styles.meta}>Originally</Subtle>
-                <Body>{current.text}</Body>
-              </Surface>
-              <Button title="Another" onPress={pickAnother} variant="ghost" />
-            </>
-          )}
+          <Pressable style={styles.keepBtn} onPress={() => setRevealed(true)}>
+            <Body style={styles.keepText}>Reveal</Body>
+          </Pressable>
+        </>
+      ) : (
+        <>
+          <View style={styles.compare}>
+            <Subtle style={styles.compareLabel}>YOU REMEMBERED</Subtle>
+            <Body style={styles.compareText}>{memory.trim().length > 0 ? memory : '…'}</Body>
+            <Subtle style={[styles.compareLabel, styles.compareGap]}>ORIGINALLY</Subtle>
+            <Body style={styles.compareText}>{original || '…'}</Body>
+          </View>
+          <Subtle style={styles.closing}>Memory is a practice.</Subtle>
+          <View style={styles.actions}>
+            <Pressable style={styles.keepBtn} onPress={another}><Body style={styles.keepText}>Another</Body></Pressable>
+            <Pressable style={styles.homeBtn} onPress={() => router.push('/')}><Body style={styles.homeText}>Home</Body></Pressable>
+          </View>
         </>
       )}
     </ScrollView>
@@ -72,28 +87,21 @@ export default function RevisitScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: theme.spacing.lg,
-    gap: theme.spacing.md,
-  },
-  prompt: {
-    marginTop: theme.spacing.xs,
-  },
-  card: {
-    gap: theme.spacing.xs,
-  },
-  meta: {
-    marginTop: theme.spacing.sm,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.sm,
-    padding: theme.spacing.sm,
-    fontSize: 16,
-    color: theme.colors.text,
-    minHeight: 120,
-    textAlignVertical: 'top',
-    backgroundColor: theme.colors.surface,
-  },
+  container: { padding: theme.spacing.lg, gap: theme.spacing.md, paddingTop: 60, paddingBottom: 80 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: theme.spacing.md, padding: theme.spacing.lg },
+  centerSub: { textAlign: 'center', lineHeight: 24 },
+  revisitLabel: { color: theme.colors.bronze, letterSpacing: 1.5 },
+  headline: { fontFamily: theme.fonts.displayItalic, fontSize: 30, lineHeight: 38 },
+  ask: { fontFamily: theme.fonts.bodySemibold, marginTop: 10 },
+  input: { borderWidth: 1, borderColor: theme.colors.divider, borderRadius: theme.radius.md, padding: theme.spacing.md, fontSize: 17, fontFamily: theme.fonts.body, color: theme.colors.ink, minHeight: 130, textAlignVertical: 'top', backgroundColor: theme.colors.surface, lineHeight: 26 },
+  keepBtn: { flex: 1, backgroundColor: theme.colors.bronze, padding: 18, borderRadius: theme.radius.md, alignItems: 'center', marginTop: 20 },
+  keepText: { color: theme.colors.ivory, fontFamily: theme.fonts.bodySemibold, fontSize: 16 },
+  compare: { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.divider, borderRadius: theme.radius.md, padding: 24, gap: 10, marginTop: 10 },
+  compareLabel: { letterSpacing: 1.5, color: theme.colors.bronze },
+  compareGap: { marginTop: 14 },
+  compareText: { lineHeight: 26 },
+  closing: { fontFamily: theme.fonts.displayItalic, fontSize: 18, textAlign: 'center', marginTop: 20 },
+  actions: { flexDirection: 'row', gap: 16 },
+  homeBtn: { flex: 1, padding: 18, borderRadius: theme.radius.md, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.divider, marginTop: 20 },
+  homeText: { fontFamily: theme.fonts.bodySemibold },
 });

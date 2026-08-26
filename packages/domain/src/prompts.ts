@@ -22,6 +22,31 @@ export const REFLECTION_PROMPTS = [
   { id: 'mind', label: 'The Lens', sublabel: 'Did it change how you see the question?' },
 ];
 
+export const NOTICE_PROMPTS = [
+  'What do you notice right now?',
+  'What sound is closest to you right now?',
+  'What is the light doing where you are?',
+] as const;
+
+export const CHOOSE_PROMPTS = [
+  { id: 'attention', label: 'What gets your attention today?', sublabel: 'Name the one thing worth your energy.' },
+  { id: 'setdown', label: 'What are you setting down?', sublabel: 'Something you can stop carrying today.' },
+];
+
+export const ZOOMOUT_PROMPTS = [
+  { id: 'part', label: 'What is this a part of?', sublabel: 'See it from further away.' },
+  { id: 'connect', label: 'How does this connect to what you already know?', sublabel: 'Tie it to something older.' },
+];
+
 export function randomJournalPrompt(): string {
   return JOURNAL_PROMPTS[Math.floor(Math.random() * JOURNAL_PROMPTS.length)];
+}
+
+export function promptForDay(list: readonly string[], now: Date): string {
+  const day = Math.floor(now.getTime() / 86_400_000);
+  return list[day % list.length];
+}
+
+export function isRevisitWorthy(createdAt: string, now: Date, days = 3): boolean {
+  return now.getTime() - new Date(createdAt).getTime() > days * 86_400_000;
 }

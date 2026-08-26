@@ -12,6 +12,11 @@ export async function getJournalEntries(db: SQLiteDatabase): Promise<JournalEntr
   return db.getAllAsync<JournalEntry>(`SELECT * FROM journal_entries ORDER BY createdAt DESC`);
 }
 
+export async function getJournalEntry(db: SQLiteDatabase, id: string): Promise<JournalEntry | null> {
+  const row = await db.getFirstAsync<JournalEntry>(`SELECT * FROM journal_entries WHERE id = ?`, [id]);
+  return row ?? null;
+}
+
 export async function saveDiscovery(db: SQLiteDatabase, d: Discovery): Promise<void> {
   await db.runAsync(
     `INSERT INTO discoveries (id, userId, category, prompt, intention, findings, sources, folderName, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
