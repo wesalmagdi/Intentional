@@ -1,41 +1,29 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import type { Discovery, JournalEntry } from '@intentional/domain';
-import { TABLES } from './schema';
-
-export async function saveDiscovery(db: SQLiteDatabase, discovery: Discovery): Promise<void> {
-  await db.runAsync(
-    `INSERT INTO ${TABLES.discoveries} (id, text, source, created_at) VALUES (?, ?, ?, ?)`,
-    [discovery.id, discovery.text, discovery.source ?? null, discovery.createdAt]
-  );
-}
-
-export async function getAllDiscoveries(db: SQLiteDatabase): Promise<Discovery[]> {
-  const rows = await db.getAllAsync<{ id: string; text: string; source: string | null; created_at: string }>(
-    `SELECT * FROM ${TABLES.discoveries} ORDER BY created_at DESC`
-  );
-  return rows.map((r) => ({
-    id: r.id,
-    text: r.text,
-    source: r.source ?? undefined,
-    createdAt: r.created_at,
-  }));
-}
+import type { JournalEntry, Discovery, Folder } from '@intentional/domain';
 
 export async function saveJournalEntry(db: SQLiteDatabase, entry: JournalEntry): Promise<void> {
   await db.runAsync(
-    `INSERT INTO ${TABLES.journal} (id, prompt, text, created_at) VALUES (?, ?, ?, ?)`,
-    [entry.id, entry.prompt, entry.text, entry.createdAt]
+    `INSERT OR REPLACE INTO journal_entries (id, userId, title, body, prompt, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [entry.id, entry.userId, entry.title ?? null, entry.body, entry.prompt ?? null, entry.createdAt, entry.updatedAt]
   );
 }
 
-export async function getAllJournalEntries(db: SQLiteDatabase): Promise<JournalEntry[]> {
-  const rows = await db.getAllAsync<{ id: string; prompt: string; text: string; created_at: string }>(
-    `SELECT * FROM ${TABLES.journal} ORDER BY created_at DESC`
+export async function getJournalEntries(db: SQLiteDatabase): Promise<JournalEntry[]> {
+  return db.getAllAsync<JournalEntry>(`SELECT * FROM journal_entries ORDER BY createdAt DESC`);
+}
+
+export async function saveDiscovery(db: SQLiteDatabase, d: Discovery): Promise<void> {
+  await db.runAsync(
+    `INSERT INTO discoveries (id, userId, category, prompt, intention, findings, sources, folderId, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [d.id, d.userId, d.category, d.prompt, d.intention ?? null, JSON.stringify(d.findings), JSON.stringify(d.sources ?? []), d.folderId ?? null, d.createdAt]
   );
-  return rows.map((r) => ({
-    id: r.id,
-    prompt: r.prompt,
-    text: r.text,
-    createdAt: r.created_at,
-  }));
+}
+
+export async function getDiscoveries(db: SQLiteDatabase): Promise<Discovery[]> {
+  const rows = await db.getAllAsync<any>(`SELECT * FROM discoveries ORDER BY createdAt DESC`);
+  return rows.map(r => ({ ...r, findings: JSON.parse(r.findings), sources: JSON.parse(r.sources || '[]') }));
+}
+
+export async function getFolders(db: SQLiteDatabase): Promise<Folder[]> {
+  return db.getAllAsync<Folder>(`SELECT * FROM folders ORDER BY name ASC`);
 }

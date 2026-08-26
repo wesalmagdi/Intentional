@@ -1,102 +1,36 @@
-import { StyleSheet, ScrollView, View } from 'react-native';
-import { Title, Body, Subtle, Surface, Button, theme } from '@intentional/ui';
+import { StyleSheet, ScrollView, Pressable, View } from 'react-native';
 import { router } from 'expo-router';
-
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning.';
-  if (hour < 18) return 'Good afternoon.';
-  return 'Good evening.';
-}
+import { Display, Body, Subtle, Label, theme } from '@intentional/ui';
 
 export default function HomeScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <Subtle style={styles.greeting}>{getGreeting()}</Subtle>
-        <Title>Intentional</Title>
+      <Label>INTENTIONAL</Label>
+      <Display style={styles.title}>A quiet place to begin.</Display>
+
+      <Pressable style={styles.hero} onPress={() => router.push('/learn')}>
+        <Subtle style={styles.heroLabel}>THE RITUAL</Subtle>
+        <Display style={styles.heroTitle}>Learn</Display>
+        <Body style={styles.heroSub}>A 10-minute search for what matters.</Body>
+      </Pressable>
+
+      <View style={styles.list}>
+        <Pressable style={styles.row} onPress={() => router.push('/journal')}>
+          <Body>Journal</Body><Subtle>→</Subtle>
+        </Pressable>
+        <Pressable style={styles.row} onPress={() => router.push('/library')}>
+          <Body>Library</Body><Subtle>→</Subtle>
+        </Pressable>
       </View>
-
-      {/* Hero Card: Learn */}
-      <Surface style={[styles.card, styles.heroCard]}>
-        <Subtle style={styles.heroTag}>THE RITUAL</Subtle>
-        <Title style={styles.heroTitle}>Learn</Title>
-        <Body style={styles.heroSubtext}>
-          A quiet, three-step space to capture what matters today.
-        </Body>
-        <View style={styles.heroButton}>
-          <Button title="Begin Session" onPress={() => router.push('/learn')} />
-        </View>
-      </Surface>
-
-      {/* Secondary Actions */}
-      <View style={styles.grid}>
-        <Surface style={styles.gridCard}>
-          <Body style={styles.cardTitle}>Journal</Body>
-          <Subtle>A daily question.</Subtle>
-          <Button title="Write" onPress={() => router.push('/journal')} variant="ghost" />
-        </Surface>
-
-        <Surface style={styles.gridCard}>
-          <Body style={styles.cardTitle}>Revisit</Body>
-          <Subtle>Test your memory.</Subtle>
-          <Button title="Play" onPress={() => router.push('/revisit')} variant="ghost" />
-        </Surface>
-      </View>
-
-      <Button title="View Library" onPress={() => router.push('/library')} variant="ghost" />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: theme.spacing.lg,
-    gap: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl * 2,
-  },
-  header: {
-    gap: theme.spacing.xs,
-    marginTop: theme.spacing.md,
-  },
-  greeting: {
-    textTransform: 'uppercase',
-    fontWeight: '600',
-    letterSpacing: 1,
-  },
-  card: {
-    gap: theme.spacing.sm,
-  },
-  heroCard: {
-    padding: theme.spacing.lg,
-    gap: theme.spacing.md,
-  },
-  heroTag: {
-    textTransform: 'uppercase',
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    fontSize: 12,
-  },
-  heroTitle: {
-    fontSize: 28,
-  },
-  heroSubtext: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  heroButton: {
-    marginTop: theme.spacing.sm,
-  },
-  grid: {
-    flexDirection: 'row',
-    gap: theme.spacing.md,
-  },
-  gridCard: {
-    flex: 1,
-    gap: theme.spacing.xs,
-  },
-  cardTitle: {
-    fontWeight: '600',
-    fontSize: 18,
-  },
+  container: { padding: theme.spacing.lg, gap: theme.spacing.lg, paddingTop: 60 },
+  title: { fontFamily: theme.fonts.displayItalic, fontSize: 34, lineHeight: 42 },
+  hero: { backgroundColor: theme.colors.surface, padding: 30, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.divider, gap: 12, marginTop: 20 },
+  heroLabel: { letterSpacing: 1.5 }, heroTitle: { fontSize: 28 }, heroSub: { marginTop: 8 },
+  list: { marginTop: 20, borderTopWidth: 1, borderTopColor: theme.colors.divider },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: theme.colors.divider }
 });

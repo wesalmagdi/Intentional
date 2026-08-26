@@ -1,51 +1,34 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, ScrollView } from 'react-native';
-import { router } from 'expo-router';
-import type { Discovery } from '@intentional/domain';
-import { getAllDiscoveries } from '@intentional/database';
+import { ScrollView, StyleSheet } from 'react-native';
+import { getDiscoveries } from '@intentional/database';
 import { getDb } from '../lib/db';
-import { Title, Body, Subtle, Button, Surface, theme } from '@intentional/ui';
+import type { Discovery } from '@intentional/domain';
+import { Display, Body, Subtle, Label, theme } from '@intentional/ui';
 
 export default function LibraryScreen() {
-  const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
-
-  useEffect(() => {
-    void (async () => {
-      const db = await getDb();
-      setDiscoveries(await getAllDiscoveries(db));
-    })();
-  }, []);
+  const [items, setItems] = useState<Discovery[]>([]);
+  useEffect(() => { void (async () => setItems(await getDiscoveries(await getDb())))(); }, []);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Button title="Home" variant="ghost" onPress={() => router.push('/')} />
-      <Title>Library</Title>
-      {discoveries.length === 0 ? (
-        <Subtle>Nothing captured yet. Start a Learn session.</Subtle>
-      ) : (
-        discoveries.map((d) => (
-          <Surface key={d.id} style={styles.card}>
-            <Body>{d.text}</Body>
-            <Subtle style={styles.meta}>
-              {new Date(d.createdAt).toLocaleDateString()}
-            </Subtle>
-          </Surface>
-        ))
-      )}
+      <Label>LIBRARY</Label>
+      <Display>What you've kept.</Display>
+      {items.map(d => (
+        <ScrollView key={d.id} style={styles.card}>
+          <Subtle>{d.category} • {new Date(d.createdAt).toLocaleDateString()}</Subtle>
+          <Body style={styles.prompt}>"{d.prompt}"</Body>
+          {Object.values(d.findings).map((text, i) => (
+            <Body key={i} style={styles.finding}>{text}</Body>
+          ))}
+        </ScrollView>
+      ))}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: theme.spacing.lg,
-    gap: theme.spacing.md,
-    paddingBottom: theme.spacing.xl,
-  },
-  card: {
-    gap: theme.spacing.xs,
-  },
-  meta: {
-    marginTop: theme.spacing.xs,
-  },
+  container: { padding: theme.spacing.lg, gap: theme.spacing.lg, paddingTop: 60 },
+  card: { backgroundColor: theme.colors.surface, padding: 20, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.divider, gap: 12, maxHeight: 300 },
+  prompt: { fontFamily: theme.fonts.displayItalic, fontSize: 20 },
+  finding: { fontSize: 16, lineHeight: 24 }
 });
