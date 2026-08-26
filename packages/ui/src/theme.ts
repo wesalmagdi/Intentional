@@ -17,7 +17,7 @@ export const theme = {
   },
   fonts: {
     display: 'SourceSerif4_600SemiBold',
-    displayItalic: 'SourceSerif4_600SemiBoldItalic',
+    displayItalic: 'SourceSerif4_600SemiBold_Italic',
     body: 'Inter_400Regular',
     bodyMedium: 'Inter_500Medium',
     bodySemibold: 'Inter_600SemiBold',
