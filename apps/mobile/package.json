@@ -13,11 +13,13 @@
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/source-serif-4": "^0.4.1",
+    "@expo/vector-icons": "^15.1.1",
     "@intentional/database": "workspace:*",
     "@intentional/domain": "workspace:*",
     "@intentional/ui": "workspace:*",
     "expo": "~54.0.0",
     "expo-constants": "~18.0.0",
+    "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.0",
     "expo-router": "~6.0.0",
     "expo-sqlite": "~16.0.0",
