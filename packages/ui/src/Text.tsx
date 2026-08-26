@@ -19,8 +19,8 @@ export function Subtle({ style, ...props }: TextProps) {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 32, fontWeight: '700', color: theme.colors.text, letterSpacing: -0.5 },
-  heading: { fontSize: 20, fontWeight: '600', color: theme.colors.text },
+  title: { fontSize: 34, fontWeight: '700', color: theme.colors.text, letterSpacing: -0.5, lineHeight: 40 },
+  heading: { fontSize: 20, fontWeight: '600', color: theme.colors.text, letterSpacing: -0.2 },
   body: { fontSize: 16, lineHeight: 24, color: theme.colors.text },
-  subtle: { fontSize: 14, color: theme.colors.subtle, lineHeight: 20 },
+  subtle: { fontSize: 14, color: theme.colors.subtle, lineHeight: 20, letterSpacing: 0.1 },
 });

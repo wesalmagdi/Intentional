@@ -1,11 +1,12 @@
 export const theme = {
   colors: {
-    background: '#F9F8F6',
+    background: '#FAF9F6', // Warm off-white (paper)
     surface: '#FFFFFF',
-    text: '#1A1A1A',
-    subtle: '#666666',
-    accent: '#2C3E50',
-    border: '#E0DED9',
+    text: '#1C1917',       // Deep stone
+    subtle: '#78716C',     // Muted stone
+    accent: '#292524',     // Dark stone for buttons
+    border: '#E7E5E4',     // Soft stone border
+    highlight: '#F5F5F4',  // Very light stone for inputs
   },
   spacing: {
     xs: 8,
@@ -15,7 +16,7 @@ export const theme = {
     xl: 48,
   },
   radius: {
-    sm: 8,
-    md: 12,
+    sm: 12,
+    md: 16,
   },
 } as const;
