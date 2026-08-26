@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { getDiscoveries } from '@intentional/database';
 import { getDb } from '../lib/db';
 import type { Discovery } from '@intentional/domain';
@@ -13,22 +13,27 @@ export default function LibraryScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       <Label>LIBRARY</Label>
       <Display>What you've kept.</Display>
+      {items.length === 0 && <Subtle style={{marginTop: 20}}>Your discoveries will appear here.</Subtle>}
       {items.map(d => (
-        <ScrollView key={d.id} style={styles.card}>
-          <Subtle>{d.category} • {new Date(d.createdAt).toLocaleDateString()}</Subtle>
+        <View key={d.id} style={styles.card}>
+          <Label>{d.folderName || d.category}</Label>
           <Body style={styles.prompt}>"{d.prompt}"</Body>
+          {d.sources && <Subtle style={styles.sources}>Source: {d.sources}</Subtle>}
           {Object.values(d.findings).map((text, i) => (
             <Body key={i} style={styles.finding}>{text}</Body>
           ))}
-        </ScrollView>
+          <Subtle style={styles.date}>{new Date(d.createdAt).toLocaleDateString()}</Subtle>
+        </View>
       ))}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: theme.spacing.lg, gap: theme.spacing.lg, paddingTop: 60 },
-  card: { backgroundColor: theme.colors.surface, padding: 20, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.divider, gap: 12, maxHeight: 300 },
-  prompt: { fontFamily: theme.fonts.displayItalic, fontSize: 20 },
-  finding: { fontSize: 16, lineHeight: 24 }
+  container: { padding: theme.spacing.lg, gap: theme.spacing.lg, paddingTop: 60, paddingBottom: 60 },
+  card: { backgroundColor: theme.colors.surface, padding: 24, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.divider, gap: 12 },
+  prompt: { fontFamily: theme.fonts.displayItalic, fontSize: 22, lineHeight: 30 },
+  sources: { fontStyle: 'italic', marginTop: 4 },
+  finding: { fontSize: 16, lineHeight: 24, marginTop: 8 },
+  date: { marginTop: 12, fontSize: 12, letterSpacing: 1 }
 });

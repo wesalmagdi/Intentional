@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { MIGRATIONS, TABLES } from './schema';
+import { MIGRATIONS } from './schema';
 
 describe('database schema', () => {
-  it('contains a migration for every table', () => {
+  it('contains migrations for the core tables', () => {
     const sql = MIGRATIONS.join(' ');
-    expect(sql).toContain(TABLES.discoveries);
-    expect(sql).toContain(TABLES.journal);
+    expect(sql).toContain('folders');
+    expect(sql).toContain('journal_entries');
+    expect(sql).toContain('discoveries');
   });
 });

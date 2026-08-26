@@ -43,7 +43,10 @@ export default function JournalScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       {prompt ? <Display style={styles.prompt}>{prompt}</Display> : <Subtle style={styles.prompt}>What's on your mind?</Subtle>}
       <TextInput style={styles.input} multiline autoFocus placeholder="Start writing..." placeholderTextColor={theme.colors.grey} value={text} onChangeText={setText} />
-      <Pressable style={styles.btn} onPress={handleKeep}><Body style={styles.btnText}>Keep this thought?</Body></Pressable>
+      <View style={styles.actions}>
+        <Pressable style={styles.btn} onPress={handleKeep}><Body style={styles.btnText}>Keep</Body></Pressable>
+        <Pressable style={styles.discardBtn} onPress={() => router.push('/')}><Body style={styles.discardText}>Discard</Body></Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -53,8 +56,11 @@ const styles = StyleSheet.create({
   title: { fontFamily: theme.fonts.displayItalic, fontSize: 28 },
   prompt: { fontFamily: theme.fonts.displayItalic, fontSize: 24, lineHeight: 32, marginTop: 20 },
   input: { flex: 1, fontSize: 18, fontFamily: theme.fonts.body, color: theme.colors.ink, lineHeight: 28, textAlignVertical: 'top' },
-  btn: { backgroundColor: theme.colors.bronze, padding: 18, borderRadius: theme.radius.md, alignItems: 'center' },
+  actions: { flexDirection: 'row', gap: 16, marginTop: 40 },
+  btn: { flex: 1, backgroundColor: theme.colors.bronze, padding: 18, borderRadius: theme.radius.md, alignItems: 'center' },
   btnText: { color: theme.colors.ivory, fontFamily: theme.fonts.bodySemibold, fontSize: 16 },
+  discardBtn: { flex: 1, padding: 18, borderRadius: theme.radius.md, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.divider },
+  discardText: { color: theme.colors.ink, fontFamily: theme.fonts.bodySemibold, fontSize: 16 },
   ghost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.colors.divider },
   ghostText: { color: theme.colors.ink, fontFamily: theme.fonts.bodySemibold, fontSize: 16 }
 });
