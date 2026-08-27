@@ -23,3 +23,11 @@ export const DiscoverySchema = z.object({
   createdAt: z.string().datetime(),
 });
 export type Discovery = z.infer<typeof DiscoverySchema>;
+
+export const ReadingSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1),
+  body: z.string().min(1),
+  createdAt: z.string().datetime(),
+});
+export type Reading = z.infer<typeof ReadingSchema>;

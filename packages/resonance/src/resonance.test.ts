@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { embed, findResonant, similarity, tokenize } from './index';
+import { embed, findResonant, keyConcepts, questionSeeds, similarity, tokenize } from './index';
 
 const NOTES = [
   {
@@ -32,5 +32,15 @@ describe('resonance engine', () => {
     expect(match?.note.id).toBe('d-1');
     const excluded = findResonant('bridges linking isolated villages', NOTES, { threshold: 0.05, excludeId: 'd-1' });
     expect(excluded.every(m => m.note.id !== 'd-1')).toBe(true);
+  });
+
+  it('extracts key concepts and deterministic question seeds', () => {
+    const text = 'Mycelium connects forests. Mycelium carries nutrients between trees. Forests share resources through mycelium networks.';
+    const concepts = keyConcepts(text, 3);
+    expect(concepts[0]).toBe('mycelium');
+    const seeds = questionSeeds(text, 'The Wood Wide Web', 3);
+    expect(seeds.length).toBe(3);
+    expect(seeds[0]).toContain('mycelium');
+    expect(seeds[0]).toContain('The Wood Wide Web');
   });
 });

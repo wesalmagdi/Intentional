@@ -8,13 +8,14 @@ import { getDb } from '../lib/db';
 import { isRevisitWorthy, type Discovery } from '@intentional/domain';
 import { pickResonant } from '../lib/resonance';
 
-type IconName = 'feather' | 'eye' | 'crosshair' | 'zoom-out' | 'book-open';
+type IconName = 'feather' | 'eye' | 'crosshair' | 'zoom-out' | 'book' | 'book-open';
 
 const PRACTICES: Array<{ label: string; path: string; icon: IconName; hint: string }> = [
   { label: 'Journal', path: '/journal', icon: 'feather', hint: 'Think without performing.' },
   { label: 'Notice', path: '/notice', icon: 'eye', hint: 'One quiet minute.' },
   { label: 'Choose', path: '/choose', icon: 'crosshair', hint: 'Attention is a choice.' },
   { label: 'Zoom Out', path: '/zoomout', icon: 'zoom-out', hint: 'See it from further away.' },
+  { label: 'Reading Room', path: '/reading', icon: 'book', hint: 'Sit with a text.' },
   { label: 'Library', path: '/library', icon: 'book-open', hint: 'What you have kept.' },
 ];
 

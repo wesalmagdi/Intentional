@@ -80,3 +80,25 @@ export function findResonant(
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 }
+
+export function keyConcepts(text: string, limit = 5): string[] {
+  const counts = new Map<string, number>();
+  for (const t of tokenize(text)) counts.set(t, (counts.get(t) ?? 0) + 1);
+  return [...counts.entries()]
+    .filter(([w]) => w.length > 3)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([w]) => w);
+}
+
+export function questionSeeds(text: string, title: string, limit = 3): string[] {
+  const concepts = keyConcepts(text, 6);
+  const templates = [
+    (c: string) => `What does "${title}" really mean by "${c}"?`,
+    (c: string) => `How does "${c}" connect to what you already know?`,
+    (c: string) => `Where does the reading change your mind about "${c}"?`,
+  ];
+  const seeds: string[] = [];
+  concepts.forEach((c, i) => seeds.push(templates[i % templates.length](c)));
+  return seeds.slice(0, limit);
+}

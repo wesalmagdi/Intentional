@@ -1,5 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import type { JournalEntry, Discovery } from '@intentional/domain';
+import type { JournalEntry, Discovery, Reading } from '@intentional/domain';
 
 export async function saveJournalEntry(db: SQLiteDatabase, entry: JournalEntry): Promise<void> {
   await db.runAsync(
@@ -27,4 +27,20 @@ export async function saveDiscovery(db: SQLiteDatabase, d: Discovery): Promise<v
 export async function getDiscoveries(db: SQLiteDatabase): Promise<Discovery[]> {
   const rows = await db.getAllAsync<any>(`SELECT * FROM discoveries ORDER BY createdAt DESC`);
   return rows.map(r => ({ ...r, findings: JSON.parse(r.findings) }));
+}
+
+export async function saveReading(db: SQLiteDatabase, r: Reading): Promise<void> {
+  await db.runAsync(
+    `INSERT OR REPLACE INTO readings (id, title, body, createdAt) VALUES (?, ?, ?, ?)`,
+    [r.id, r.title, r.body, r.createdAt]
+  );
+}
+
+export async function getReadings(db: SQLiteDatabase): Promise<Reading[]> {
+  return db.getAllAsync<Reading>(`SELECT * FROM readings ORDER BY createdAt DESC`);
+}
+
+export async function getReading(db: SQLiteDatabase, id: string): Promise<Reading | null> {
+  const row = await db.getFirstAsync<Reading>(`SELECT * FROM readings WHERE id = ?`, [id]);
+  return row ?? null;
 }
