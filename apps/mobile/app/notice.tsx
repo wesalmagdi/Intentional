@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, TextInput, Animated } from 'react-native';
 import { router } from 'expo-router';
+import * as Speech from 'expo-speech';
 import { useCountdown } from '../lib/timer';
 import { NOTICE_PROMPTS, promptForDay } from '@intentional/domain';
 import { saveDiscovery } from '@intentional/database';
@@ -14,6 +15,28 @@ function BreathCircle({ onDone }: { onDone: () => void }) {
 
   useEffect(() => {
     let alive = true;
+    let selectedVoice: string | undefined;
+
+    void (async () => {
+      try {
+        const voices = await Speech.getAvailableVoicesAsync();
+        const preferred = ['Samantha', 'Karen', 'Moira', 'Tessa', 'Fiona', 'Google UK English Female', 'en-US-Female'];
+        const found = voices.find(v => preferred.some(p => v.name.includes(p) || v.identifier.includes(p)) && v.language.startsWith('en'));
+        if (found) selectedVoice = found.identifier;
+      } catch {}
+    })();
+
+    const speak = (text: string) => {
+      if (!alive) return;
+      void Speech.speak(text, { 
+        voice: selectedVoice, 
+        rate: 0.85, 
+        pitch: 1.0,
+        language: 'en-US',
+        volume: 0.8
+      });
+    };
+
     const run = (cycle: number) => {
       if (!alive) return;
       if (cycle >= 2) {
@@ -21,18 +44,21 @@ function BreathCircle({ onDone }: { onDone: () => void }) {
         return;
       }
       setLabel('Breathe in.');
+      speak('Breathe in.');
       Animated.timing(scale, { toValue: 1.4, duration: 4000, useNativeDriver: true }).start(() => {
         if (!alive) return;
         setLabel('Hold.');
+        speak('Hold.');
         setTimeout(() => {
           if (!alive) return;
           setLabel('Let it go.');
+          speak('And let it go.');
           Animated.timing(scale, { toValue: 1, duration: 6000, useNativeDriver: true }).start(() => run(cycle + 1));
         }, 4000);
       });
     };
     run(0);
-    return () => { alive = false; };
+    return () => { alive = false; void Speech.stop(); };
   }, []);
 
   return (

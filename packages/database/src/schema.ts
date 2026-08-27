@@ -10,5 +10,8 @@ export const MIGRATIONS = [
   );`,
   `CREATE TABLE IF NOT EXISTS readings (
     id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL, createdAt TEXT NOT NULL
+  );`,
+  `CREATE TABLE IF NOT EXISTS preferences (
+    key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL
   );`
 ];

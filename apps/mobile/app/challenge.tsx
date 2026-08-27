@@ -5,19 +5,32 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { useCountdown } from '../lib/timer';
+import { getPreference } from '@intentional/database';
+import { getDb } from '../lib/db';
 import { Display, Body, Subtle, Label, BackBar, theme } from '@intentional/ui';
-import soundscape from '../assets/soundscape.wav';
+import { SOUND_OPTIONS, type SoundId } from './settings';
 
+const SOUNDS = {
+  focus: require('../assets/soundscape.wav'),
+  rain: require('../assets/rain.wav'),
+  forest: require('../assets/forest.wav'),
+};
 const TOTAL = 10 * 60 * 1000;
 
 export default function ChallengeScreen() {
   const { prompt, intention, category } = useLocalSearchParams();
   const { remainingMs, isPaused, pause, resume, isDone } = useCountdown(TOTAL);
-  const player = useAudioPlayer(soundscape);
+  const [soundId, setSoundId] = useState<SoundId>('focus');
+  
+  const player = useAudioPlayer(SOUNDS[soundId]);
   const [soundOn, setSoundOn] = useState(true);
 
   useEffect(() => {
     void setAudioModeAsync({ playsInSilentMode: true });
+    void (async () => {
+      const val = await getPreference(await getDb(), 'soundscape');
+      if (val && SOUNDS[val as SoundId]) setSoundId(val as SoundId);
+    })();
   }, []);
 
   useEffect(() => {
@@ -28,8 +41,7 @@ export default function ChallengeScreen() {
     } else {
       player.pause();
     }
-    return () => { player.pause(); };
-  }, [soundOn]);
+  }, [soundOn, soundId]);
 
   useEffect(() => {
     if (isDone) router.replace({ pathname: '/reflection', params: { prompt, intention, category } });

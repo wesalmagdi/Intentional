@@ -8,7 +8,7 @@ import { getDb } from '../lib/db';
 import { isRevisitWorthy, type Discovery } from '@intentional/domain';
 import { pickResonant } from '../lib/resonance';
 
-type IconName = 'feather' | 'eye' | 'crosshair' | 'zoom-out' | 'book' | 'book-open' | 'download';
+type IconName = 'feather' | 'eye' | 'crosshair' | 'zoom-out' | 'book' | 'book-open' | 'download' | 'settings';
 
 const PRACTICES: Array<{ label: string; path: string; icon: IconName; hint: string }> = [
   { label: 'Journal', path: '/journal', icon: 'feather', hint: 'Think without performing.' },
@@ -18,6 +18,7 @@ const PRACTICES: Array<{ label: string; path: string; icon: IconName; hint: stri
   { label: 'Reading Room', path: '/reading', icon: 'book', hint: 'Sit with a text.' },
   { label: 'Library', path: '/library', icon: 'book-open', hint: 'What you have kept.' },
   { label: 'Your Data', path: '/data', icon: 'download', hint: 'Take it anywhere.' },
+  { label: 'Settings', path: '/settings', icon: 'settings', hint: 'Choose your soundscape.' },
 ];
 
 function greeting(): string {

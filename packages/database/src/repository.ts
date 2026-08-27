@@ -13,8 +13,7 @@ export async function getJournalEntries(db: SQLiteDatabase): Promise<JournalEntr
 }
 
 export async function getJournalEntry(db: SQLiteDatabase, id: string): Promise<JournalEntry | null> {
-  const row = await db.getFirstAsync<JournalEntry>(`SELECT * FROM journal_entries WHERE id = ?`, [id]);
-  return row ?? null;
+  return db.getFirstAsync<JournalEntry>(`SELECT * FROM journal_entries WHERE id = ?`, [id]) ?? null;
 }
 
 export async function saveDiscovery(db: SQLiteDatabase, d: Discovery): Promise<void> {
@@ -30,10 +29,7 @@ export async function getDiscoveries(db: SQLiteDatabase): Promise<Discovery[]> {
 }
 
 export async function saveReading(db: SQLiteDatabase, r: Reading): Promise<void> {
-  await db.runAsync(
-    `INSERT OR REPLACE INTO readings (id, title, body, createdAt) VALUES (?, ?, ?, ?)`,
-    [r.id, r.title, r.body, r.createdAt]
-  );
+  await db.runAsync(`INSERT OR REPLACE INTO readings (id, title, body, createdAt) VALUES (?, ?, ?, ?)`, [r.id, r.title, r.body, r.createdAt]);
 }
 
 export async function getReadings(db: SQLiteDatabase): Promise<Reading[]> {
@@ -41,6 +37,14 @@ export async function getReadings(db: SQLiteDatabase): Promise<Reading[]> {
 }
 
 export async function getReading(db: SQLiteDatabase, id: string): Promise<Reading | null> {
-  const row = await db.getFirstAsync<Reading>(`SELECT * FROM readings WHERE id = ?`, [id]);
-  return row ?? null;
+  return db.getFirstAsync<Reading>(`SELECT * FROM readings WHERE id = ?`, [id]) ?? null;
+}
+
+export async function setPreference(db: SQLiteDatabase, key: string, value: string): Promise<void> {
+  await db.runAsync(`INSERT OR REPLACE INTO preferences (key, value) VALUES (?, ?)`, [key, value]);
+}
+
+export async function getPreference(db: SQLiteDatabase, key: string): Promise<string | null> {
+  const row = await db.getFirstAsync<{ value: string }>(`SELECT value FROM preferences WHERE key = ?`, [key]);
+  return row?.value ?? null;
 }
