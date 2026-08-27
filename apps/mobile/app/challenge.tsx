@@ -1,15 +1,35 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Feather } from '@expo/vector-icons';
+import { useAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { useCountdown } from '../lib/timer';
 import { Display, Body, Subtle, Label, BackBar, theme } from '@intentional/ui';
+import soundscape from '../assets/soundscape.wav';
 
 const TOTAL = 10 * 60 * 1000;
 
 export default function ChallengeScreen() {
   const { prompt, intention, category } = useLocalSearchParams();
   const { remainingMs, isPaused, pause, resume, isDone } = useCountdown(TOTAL);
+  const player = useAudioPlayer(soundscape);
+  const [soundOn, setSoundOn] = useState(true);
+
+  useEffect(() => {
+    void setAudioModeAsync({ playsInSilentMode: true });
+  }, []);
+
+  useEffect(() => {
+    if (soundOn) {
+      (player as any).loop = true;
+      player.volume = 0.35;
+      player.play();
+    } else {
+      player.pause();
+    }
+    return () => { player.pause(); };
+  }, [soundOn]);
 
   useEffect(() => {
     if (isDone) router.replace({ pathname: '/reflection', params: { prompt, intention, category } });
@@ -27,10 +47,13 @@ export default function ChallengeScreen() {
     <LinearGradient colors={[theme.colors.forest, theme.colors.forestDeep]} style={styles.gradient}>
       <Text style={styles.ghost}>?</Text>
 
-      <View style={styles.top}>
+      <View style={styles.topRow}>
         <BackBar label="Leave" onPress={() => router.push('/')} onDark />
-        {isPaused && <Label style={styles.pausedLabel}>PAUSED — THE CLOCK IS SAFE</Label>}
+        <Pressable onPress={() => setSoundOn(s => !s)} hitSlop={12}>
+          <Feather name={soundOn ? 'volume-2' : 'volume-x'} size={20} color={theme.colors.ivory} />
+        </Pressable>
       </View>
+      {isPaused && <Label style={styles.pausedLabel}>PAUSED — THE CLOCK IS SAFE</Label>}
 
       <View style={styles.middle}>
         <Text style={styles.timer}>{minutes}:{seconds}</Text>
@@ -40,7 +63,7 @@ export default function ChallengeScreen() {
 
       <View style={styles.bottom}>
         <View style={styles.track}>
-          <View style={[styles.fill, { width: `${(progress * 100).toFixed(1)}%` as any as any }]} />
+          <View style={[styles.fill, { width: `${(progress * 100).toFixed(1)}%` as any }]} />
         </View>
         <Subtle style={styles.copy}>Search. Read. Follow the question. You can leave the app.</Subtle>
         <Pressable style={styles.pill} onPress={() => (isPaused ? resume() : pause())}>
@@ -57,8 +80,8 @@ export default function ChallengeScreen() {
 const styles = StyleSheet.create({
   gradient: { flex: 1, padding: theme.spacing.lg },
   ghost: { position: 'absolute', top: 90, right: -20, fontFamily: theme.fonts.displayItalic, fontSize: 260, color: theme.colors.ivory, opacity: 0.04 },
-  top: { marginTop: 40, alignItems: 'flex-start', gap: 12 },
-  pausedLabel: { color: theme.colors.ivory, opacity: 0.6, letterSpacing: 1.5 },
+  topRow: { marginTop: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  pausedLabel: { color: theme.colors.ivory, opacity: 0.6, letterSpacing: 1.5, marginTop: theme.spacing.sm },
   middle: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: theme.spacing.lg },
   timer: { fontFamily: theme.fonts.bodySemibold, fontSize: 42, letterSpacing: 6, color: theme.colors.ivory, opacity: 0.9 },
   question: { color: theme.colors.ivory, fontSize: 32, lineHeight: 42, textAlign: 'center' },
