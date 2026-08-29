@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Pressable, View } from 'react-native';
+import { ScrollView, StyleSheet, Pressable, View, Text } from 'react-native';
 import { router } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FS from 'expo-file-system/legacy';
-const FileSystem = FS as any;
 import * as Sharing from 'expo-sharing';
 import { ExportBundleSchema } from '@intentional/domain';
 import {
@@ -11,7 +10,10 @@ import {
   saveDiscovery, saveJournalEntry, saveReading,
 } from '@intentional/database';
 import { getDb } from '../lib/db';
-import { Display, Body, Subtle, Label, BackBar, theme } from '@intentional/ui';
+import { colors, typography, space, radius } from '@intentional/ui';
+import { Botanical } from '../components/Scenery';
+
+const FileSystem = FS as any;
 
 export default function DataScreen() {
   const [note, setNote] = useState<string | null>(null);
@@ -25,8 +27,7 @@ export default function DataScreen() {
         getJournalEntries(db), getDiscoveries(db), getReadings(db),
       ]);
       const bundle = ExportBundleSchema.parse({
-        app: 'intentional', version: 1,
-        exportedAt: new Date().toISOString(),
+        app: 'intentional', version: 1, exportedAt: new Date().toISOString(),
         journal, discoveries, readings,
       });
       const date = new Date().toISOString().slice(0, 10);
@@ -39,9 +40,7 @@ export default function DataScreen() {
         setNote(`Saved at ${path}`);
       }
     } catch (err: any) {
-      const msg = err?.message || String(err);
-      console.error('EXPORT ERROR:', msg);
-      setNote(`Error: ${msg}`);
+      setNote(`Error: ${err?.message || String(err)}`);
     } finally {
       setBusy(false);
     }
@@ -54,51 +53,40 @@ export default function DataScreen() {
       if (result.canceled || result.assets.length === 0) return;
       const raw = await FileSystem.readAsStringAsync(result.assets[0].uri);
       let parsed;
-      try {
-        parsed = ExportBundleSchema.safeParse(JSON.parse(raw));
-      } catch {
-        setNote("That file couldn't be read.");
-        return;
-      }
-      if (!parsed.success) {
-        setNote("That file doesn't look like Intentional data.");
-        return;
-      }
+      try { parsed = ExportBundleSchema.safeParse(JSON.parse(raw)); }
+      catch { setNote("That file couldn't be read."); return; }
+      if (!parsed.success) { setNote("That file doesn't look like Intentional data."); return; }
       const db = await getDb();
       for (const e of parsed.data.journal) await saveJournalEntry(db, e);
       for (const d of parsed.data.discoveries) await saveDiscovery(db, d);
       for (const r of parsed.data.readings) await saveReading(db, r);
-      setNote(`Brought in: ${parsed.data.journal.length} entries, ${parsed.data.discoveries.length} discoveries, ${parsed.data.readings.length} readings. Nothing was duplicated.`);
+      setNote(`Brought in: ${parsed.data.journal.length} entries, ${parsed.data.discoveries.length} discoveries, ${parsed.data.readings.length} readings.`);
     } catch (err: any) {
-      const msg = err?.message || String(err);
-      console.error('IMPORT ERROR:', msg);
-      setNote(`Error: ${msg}`);
+      setNote(`Error: ${err?.message || String(err)}`);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <BackBar label="Home" onPress={() => router.push('/')} />
-      <Label style={styles.eyebrow}>YOUR DATA</Label>
-      <Display style={styles.title}>It's yours. Take it anywhere.</Display>
-      <Subtle>
-        Everything lives on this phone only. When you change phones,
-        pack it up and bring it with you — no account, no cloud.
-      </Subtle>
+    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+      <Botanical />
+      <Pressable onPress={() => router.push('/')}><Text style={styles.back}>← Home</Text></Pressable>
+      <Text style={styles.eyebrow}>YOUR DATA</Text>
+      <Text style={styles.headline}>It's yours.{"\n"}Take it anywhere.</Text>
+      <Text style={styles.sub}>Everything lives on this phone only. When you change phones, pack it up and bring it with you — no account, no cloud.</Text>
 
       <Pressable style={styles.primaryBtn} onPress={() => void handleExport()} disabled={busy}>
-        <Body style={styles.primaryText}>Export everything</Body>
+        <Text style={styles.primaryText}>Export everything</Text>
       </Pressable>
       <Pressable style={styles.ghostBtn} onPress={() => void handleImport()} disabled={busy}>
-        <Body style={styles.ghostText}>Import from another phone</Body>
+        <Text style={styles.ghostText}>Import from another phone</Text>
       </Pressable>
 
       {note !== null && (
         <View style={styles.noteCard}>
-          <Body style={styles.ornament}>❦</Body>
-          <Subtle>{note}</Subtle>
+          <Text style={styles.ornament}>❦</Text>
+          <Text style={styles.noteText}>{note}</Text>
         </View>
       )}
     </ScrollView>
@@ -106,13 +94,16 @@ export default function DataScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: theme.spacing.lg, gap: theme.spacing.md, paddingTop: 60, paddingBottom: 90 },
-  eyebrow: { color: theme.colors.bronze, letterSpacing: 1.5, marginTop: theme.spacing.sm },
-  title: { fontFamily: theme.fonts.displayItalic, fontSize: 32, lineHeight: 40 },
-  primaryBtn: { backgroundColor: theme.colors.bronze, padding: 18, borderRadius: theme.radius.md, alignItems: 'center', marginTop: theme.spacing.md },
-  primaryText: { color: theme.colors.ivory, fontFamily: theme.fonts.bodySemibold, fontSize: 16 },
-  ghostBtn: { padding: 18, borderRadius: theme.radius.md, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.divider },
-  ghostText: { color: theme.colors.ink, fontFamily: theme.fonts.bodySemibold },
-  noteCard: { borderWidth: 1, borderColor: theme.colors.bronze, borderRadius: theme.radius.md, padding: 20, gap: 10, backgroundColor: theme.colors.background, marginTop: theme.spacing.sm },
-  ornament: { color: theme.colors.bronze, fontSize: 18, textAlign: 'center' },
+  container: { padding: space[6], paddingTop: space[8], gap: space[4] },
+  back: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.stone },
+  eyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.copper, marginTop: space[4] },
+  headline: { fontFamily: typography.families.displayItalic, fontSize: 30, lineHeight: 38, color: colors.ink },
+  sub: { fontFamily: typography.families.body, fontSize: 14, lineHeight: 22, color: colors.stone, marginBottom: space[3] },
+  primaryBtn: { backgroundColor: colors.copperDeep, padding: 17, borderRadius: radius.sm, alignItems: 'center' },
+  primaryText: { color: colors.cream, fontFamily: typography.families.bodySemibold, fontSize: 15 },
+  ghostBtn: { padding: 17, borderRadius: radius.sm, alignItems: 'center', borderWidth: 1, borderColor: colors.hairline },
+  ghostText: { color: colors.ink, fontFamily: typography.families.bodySemibold, fontSize: 15 },
+  noteCard: { borderWidth: 1, borderColor: colors.copper, borderRadius: radius.md, padding: space[5], gap: space[2], backgroundColor: colors.creamCard, marginTop: space[3] },
+  ornament: { fontFamily: typography.families.display, fontSize: 18, color: colors.copper, textAlign: 'center' },
+  noteText: { fontFamily: typography.families.body, fontSize: 13, lineHeight: 20, color: colors.inkSoft, textAlign: 'center' },
 });

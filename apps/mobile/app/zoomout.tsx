@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Pressable, TextInput } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable, TextInput, Text } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -8,11 +8,10 @@ import type { ResonantMatch } from '@intentional/resonance';
 import { getDiscoveries, saveDiscovery } from '@intentional/database';
 import { getDb } from '../lib/db';
 import { resonantWith, discoveryText } from '../lib/resonance';
-import { Display, Body, Subtle, Label, BackBar, theme } from '@intentional/ui';
+import { colors, typography, space, radius } from '@intentional/ui';
+import { HorizonGlow } from '../components/Scenery';
 
-function snippet(t: string): string {
-  return t.length > 140 ? `${t.slice(0, 140)}…` : t;
-}
+function snippet(t: string): string { return t.length > 140 ? `${t.slice(0, 140)}…` : t; }
 
 export default function ZoomOutScreen() {
   const [subject, setSubject] = useState<Discovery | null | undefined>(undefined);
@@ -30,10 +29,7 @@ export default function ZoomOutScreen() {
 
   useEffect(() => {
     if (!subject) return;
-    void (async () => {
-      const m = await resonantWith(discoveryText(subject), { excludeRawId: subject.id, threshold: 0.1 });
-      setEcho(m);
-    })();
+    void (async () => setEcho(await resonantWith(discoveryText(subject), { excludeRawId: subject.id, threshold: 0.1 })))();
   }, [subject]);
 
   async function handleKeep() {
@@ -41,82 +37,71 @@ export default function ZoomOutScreen() {
     const part = (answers.part ?? '').trim();
     const connect = (answers.connect ?? '').trim();
     if (part.length === 0 && connect.length === 0) return;
-    const db = await getDb();
-    await saveDiscovery(db, {
+    await saveDiscovery(await getDb(), {
       id: Date.now().toString(), userId: 'local', category: 'Zoom Out',
       prompt: subject.prompt, findings: { part, connect }, createdAt: new Date().toISOString(),
     });
     setKept(true);
   }
 
-  if (kept) {
-    return (
-      <LinearGradient colors={[theme.colors.forest, theme.colors.forestDeep]} style={styles.center}>
-        <Display style={styles.ivory}>Seen from further away.</Display>
-        <Pressable style={styles.homeBtn} onPress={() => router.push('/')}><Body style={styles.homeText}>Home</Body></Pressable>
-      </LinearGradient>
-    );
-  }
+  if (kept) return (
+    <LinearGradient colors={[colors.night, colors.nightSoft]} style={styles.center}>
+      <HorizonGlow />
+      <Text style={styles.keptTitle}>Seen from further away.</Text>
+      <Pressable style={styles.homeBtn} onPress={() => router.push('/')}><Text style={styles.homeText}>Home</Text></Pressable>
+    </LinearGradient>
+  );
 
-  if (subject === undefined) return <View style={styles.blank} />;
+  if (subject === undefined) return <View style={{ flex: 1, backgroundColor: colors.night }} />;
 
-  if (subject === null) {
-    return (
-      <LinearGradient colors={[theme.colors.forest, theme.colors.forestDeep]} style={styles.center}>
-        <Display style={styles.ivory}>Zoom out.</Display>
-        <Subtle style={styles.centerSub}>This practice needs something to look at.{"\n"}Finish a Learn challenge first.</Subtle>
-        <Pressable style={styles.homeBtn} onPress={() => router.push('/learn')}><Body style={styles.homeText}>Begin Learn</Body></Pressable>
-      </LinearGradient>
-    );
-  }
+  if (subject === null) return (
+    <LinearGradient colors={[colors.night, colors.nightSoft]} style={styles.center}>
+      <HorizonGlow />
+      <Text style={styles.keptTitle}>Zoom out.</Text>
+      <Text style={styles.centerSub}>This practice needs something to look at.{"\n"}Finish a Learn challenge first.</Text>
+      <Pressable style={styles.homeBtn} onPress={() => router.push('/learn')}><Text style={styles.homeText}>Begin Learn</Text></Pressable>
+    </LinearGradient>
+  );
 
   return (
-    <LinearGradient colors={[theme.colors.forest, theme.colors.forestDeep]} style={styles.gradient}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <BackBar label="Home" onPress={() => router.push('/')} onDark />
-        <Label style={styles.eyebrow}>ZOOM OUT</Label>
-        <Subtle style={styles.subjectLabel}>RECENTLY KEPT</Subtle>
-        <Display style={styles.subject} numberOfLines={3}>"{subject.prompt}"</Display>
+    <LinearGradient colors={[colors.night, colors.nightSoft]} style={styles.gradient}>
+      <HorizonGlow />
+      <ScrollView contentContainerStyle={styles.scroll} style={{ zIndex: 1 }}>
+        <Pressable onPress={() => router.push('/')}><Text style={styles.back}>← Home</Text></Pressable>
+        <Text style={styles.eyebrow}>ZOOM OUT</Text>
+        <Text style={styles.subjectLabel}>RECENTLY KEPT</Text>
+        <Text style={styles.subject} numberOfLines={3}>"{subject.prompt}"</Text>
 
         {echo !== null && (
           <View style={styles.echoCard}>
-            <Subtle style={styles.echoLabel}>FROM YOUR LIBRARY — IT ECHOES</Subtle>
-            <Body style={styles.echoText} numberOfLines={3}>"{snippet(echo.note.text)}"</Body>
-            <Subtle style={styles.echoDate}>{new Date(echo.note.createdAt).toLocaleDateString()}</Subtle>
+            <Text style={styles.echoLabel}>FROM YOUR LIBRARY — IT ECHOES</Text>
+            <Text style={styles.echoText} numberOfLines={3}>"{snippet(echo.note.text)}"</Text>
+            <Text style={styles.echoDate}>{new Date(echo.note.createdAt).toLocaleDateString()}</Text>
           </View>
         )}
 
-        <View style={styles.prompts}>
-          {ZOOMOUT_PROMPTS.map(p => {
-            const open = expanded === p.id;
-            return (
-              <View key={p.id} style={[styles.card, open && styles.cardActive]}>
-                <Pressable style={styles.header} onPress={() => setExpanded(open ? null : p.id)}>
-                  <View style={styles.headerText}>
-                    <Body style={styles.cardLabel}>{p.label}</Body>
-                    <Subtle style={styles.cardSub}>{p.sublabel}</Subtle>
-                  </View>
-                  <Feather name={open ? 'minus' : 'plus'} size={18} color={theme.colors.ivory} />
-                </Pressable>
-                {open && (
-                  <TextInput
-                    style={styles.input}
-                    multiline
-                    autoFocus
-                    placeholder="Write freely..."
-                    placeholderTextColor="rgba(247,245,240,0.5)"
-                    value={answers[p.id] ?? ''}
-                    onChangeText={t => setAnswers({ ...answers, [p.id]: t })}
-                  />
-                )}
-              </View>
-            );
-          })}
-        </View>
+        {ZOOMOUT_PROMPTS.map(p => {
+          const open = expanded === p.id;
+          return (
+            <View key={p.id} style={[styles.card, open && styles.cardActive]}>
+              <Pressable style={styles.header} onPress={() => setExpanded(open ? null : p.id)}>
+                <View style={styles.headerText}>
+                  <Text style={styles.cardLabel}>{p.label}</Text>
+                  <Text style={styles.cardSub}>{p.sublabel}</Text>
+                </View>
+                <Feather name={open ? 'minus' : 'plus'} size={18} color={colors.copperSoft} />
+              </Pressable>
+              {open && (
+                <View style={styles.inputWrap}>
+                  <TextInput style={styles.input} multiline autoFocus placeholder="Write freely..." placeholderTextColor="rgba(244,238,227,0.4)"
+                    value={answers[p.id] ?? ''} onChangeText={t => setAnswers({ ...answers, [p.id]: t })} />
+                </View>
+              )}
+            </View>
+          );
+        })}
 
-        <Pressable style={styles.keepBtn} onPress={() => void handleKeep()}>
-          <Body style={styles.keepText}>Keep this.</Body>
-        </Pressable>
+        <Pressable style={styles.keepBtn} onPress={() => void handleKeep()}><Text style={styles.keepText}>Keep this.</Text></Pressable>
       </ScrollView>
     </LinearGradient>
   );
@@ -124,28 +109,28 @@ export default function ZoomOutScreen() {
 
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
-  scroll: { padding: theme.spacing.lg, gap: theme.spacing.md, paddingTop: 60, paddingBottom: 80 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: theme.spacing.lg, padding: theme.spacing.lg },
-  blank: { flex: 1, backgroundColor: theme.colors.forest },
-  centerSub: { color: theme.colors.ivory, opacity: 0.7, textAlign: 'center', lineHeight: 24 },
-  ivory: { color: theme.colors.ivory },
-  eyebrow: { color: theme.colors.ivory, opacity: 0.6, letterSpacing: 1.5, marginTop: theme.spacing.sm },
-  subjectLabel: { color: theme.colors.ivory, opacity: 0.5, letterSpacing: 1.5 },
-  subject: { color: theme.colors.ivory, fontSize: 28, lineHeight: 36 },
-  echoCard: { borderWidth: 1, borderColor: 'rgba(247,245,240,0.3)', borderRadius: theme.radius.md, padding: 18, gap: 8, backgroundColor: 'rgba(247,245,240,0.06)' },
-  echoLabel: { color: theme.colors.ivory, opacity: 0.55, letterSpacing: 1.5, fontSize: 10 },
-  echoText: { color: theme.colors.ivory, fontFamily: theme.fonts.displayItalic, fontSize: 17, lineHeight: 25, opacity: 0.95 },
-  echoDate: { color: theme.colors.ivory, opacity: 0.5, fontSize: 12, letterSpacing: 1 },
-  prompts: { gap: 14, marginTop: theme.spacing.sm },
-  card: { borderWidth: 1, borderColor: 'rgba(247,245,240,0.22)', borderRadius: theme.radius.md, overflow: 'hidden' },
-  cardActive: { borderColor: theme.colors.ivory },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, gap: 14 },
+  scroll: { padding: space[6], paddingTop: space[8], gap: space[4] },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[4], padding: space[6] },
+  centerSub: { fontFamily: typography.families.body, fontSize: 14, color: colors.cream, opacity: 0.6, textAlign: 'center', lineHeight: 22 },
+  keptTitle: { fontFamily: typography.families.display, fontSize: 30, color: colors.cream, textAlign: 'center' },
+  back: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.cream, opacity: 0.6 },
+  eyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.copperSoft, marginTop: space[4] },
+  subjectLabel: { fontFamily: typography.families.body, fontSize: 11, letterSpacing: 1.5, color: colors.stone },
+  subject: { fontFamily: typography.families.displayItalic, fontSize: 26, lineHeight: 34, color: colors.cream },
+  echoCard: { borderWidth: 1, borderColor: colors.hairlineDark, borderRadius: radius.md, padding: space[4], gap: space[2], backgroundColor: 'rgba(244,238,227,0.05)' },
+  echoLabel: { fontFamily: typography.families.body, fontSize: 10, letterSpacing: 1.5, color: colors.stone },
+  echoText: { fontFamily: typography.families.displayItalic, fontSize: 16, lineHeight: 24, color: colors.cream, opacity: 0.9 },
+  echoDate: { fontFamily: typography.families.body, fontSize: 11, color: colors.stone },
+  card: { borderWidth: 1, borderColor: colors.hairlineDark, borderRadius: radius.md, overflow: 'hidden' },
+  cardActive: { borderColor: colors.copperSoft },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: space[5], gap: space[3] },
   headerText: { flex: 1, gap: 3 },
-  cardLabel: { color: theme.colors.ivory, fontFamily: theme.fonts.bodySemibold },
-  cardSub: { color: theme.colors.ivory, opacity: 0.6 },
-  input: { padding: 20, paddingTop: 0, fontSize: 16, fontFamily: theme.fonts.body, color: theme.colors.ivory, minHeight: 110, textAlignVertical: 'top', backgroundColor: 'rgba(247,245,240,0.08)', lineHeight: 26 },
-  keepBtn: { backgroundColor: theme.colors.ivory, padding: 18, borderRadius: theme.radius.md, alignItems: 'center', marginTop: theme.spacing.sm },
-  keepText: { color: theme.colors.forest, fontFamily: theme.fonts.bodySemibold, fontSize: 16 },
-  homeBtn: { paddingHorizontal: 40, paddingVertical: 14, borderWidth: 1, borderColor: 'rgba(247,245,240,0.4)', borderRadius: theme.radius.sm },
-  homeText: { color: theme.colors.ivory, fontFamily: theme.fonts.bodySemibold },
+  cardLabel: { fontFamily: typography.families.bodySemibold, fontSize: 15, color: colors.cream },
+  cardSub: { fontFamily: typography.families.body, fontSize: 13, color: colors.stone },
+  inputWrap: { paddingHorizontal: space[5], paddingBottom: space[5] },
+  input: { fontFamily: typography.families.body, fontSize: 15, color: colors.cream, minHeight: 100, textAlignVertical: 'top', lineHeight: 24, backgroundColor: 'rgba(244,238,227,0.06)', borderRadius: radius.sm, padding: space[3] },
+  keepBtn: { backgroundColor: colors.cream, padding: 17, borderRadius: radius.sm, alignItems: 'center', marginTop: space[3] },
+  keepText: { color: colors.night, fontFamily: typography.families.bodySemibold, fontSize: 15 },
+  homeBtn: { paddingHorizontal: space[8], paddingVertical: space[3], borderWidth: 1, borderColor: colors.hairlineDark, borderRadius: radius.sm },
+  homeText: { fontFamily: typography.families.bodySemibold, fontSize: 14, color: colors.cream },
 });

@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { LEARN_PROMPTS } from '@intentional/domain';
 import { colors, typography, space, radius } from '@intentional/ui';
+import { Botanical } from '../components/Scenery';
 
 export default function NewChallengeScreen() {
   const [question, setQuestion] = useState('');
@@ -21,6 +22,7 @@ export default function NewChallengeScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+      <Botanical />
       <Pressable onPress={() => router.back()} hitSlop={12}><Feather name="x" size={22} color={colors.ink} /></Pressable>
 
       <Text style={styles.headline}>What are you{"\n"}curious about?</Text>
@@ -28,12 +30,10 @@ export default function NewChallengeScreen() {
 
       <View style={styles.inputCard}>
         <TextInput
-          style={styles.input}
-          multiline
+          style={styles.input} multiline
           placeholder={"Ask a question...\n(e.g. Why do we dream?)"}
           placeholderTextColor={colors.stone}
-          value={question}
-          onChangeText={setQuestion}
+          value={question} onChangeText={setQuestion}
         />
       </View>
 

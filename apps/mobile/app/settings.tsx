@@ -4,7 +4,8 @@ import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { getPreference, setPreference } from '@intentional/database';
 import { getDb } from '../lib/db';
-import { Display, Body, Subtle, Label, BackBar, theme } from '@intentional/ui';
+import { colors, typography, space, radius } from '@intentional/ui';
+import { Botanical } from '../components/Scenery';
 
 export const SOUND_OPTIONS = [
   { id: 'focus', label: 'Deep Focus', desc: 'Warm brown noise for concentration.' },
@@ -30,38 +31,35 @@ export default function SettingsScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <BackBar label="Home" onPress={() => router.push('/')} />
-      <Label style={styles.eyebrow}>SETTINGS</Label>
-      <Display style={styles.title}>Your soundscape.</Display>
-      <Subtle>Choose the background noise for your 10-minute challenges.</Subtle>
+    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+      <Botanical />
+      <Pressable onPress={() => router.push('/')}><Text style={styles.back}>← Home</Text></Pressable>
+      <Text style={styles.eyebrow}>SETTINGS</Text>
+      <Text style={styles.headline}>Your soundscape.</Text>
+      <Text style={styles.sub}>Choose the background noise for your 10-minute challenges.</Text>
 
-      <View style={styles.list}>
-        {SOUND_OPTIONS.map(opt => (
-          <Pressable
-            key={opt.id}
-            style={[styles.card, selected === opt.id && styles.cardActive]}
-            onPress={() => void handleSelect(opt.id)}
-          >
-            <View style={styles.cardText}>
-              <Body style={styles.cardTitle}>{opt.label}</Body>
-              <Subtle>{opt.desc}</Subtle>
-            </View>
-            {selected === opt.id && <Feather name="check" size={20} color={theme.colors.bronze} />}
-          </Pressable>
-        ))}
-      </View>
+      {SOUND_OPTIONS.map(opt => (
+        <Pressable key={opt.id} style={[styles.card, selected === opt.id && styles.cardActive]} onPress={() => void handleSelect(opt.id)}>
+          <View style={styles.cardText}>
+            <Text style={styles.cardTitle}>{opt.label}</Text>
+            <Text style={styles.cardSub}>{opt.desc}</Text>
+          </View>
+          {selected === opt.id && <Feather name="check" size={20} color={colors.copper} />}
+        </Pressable>
+      ))}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: theme.spacing.lg, gap: theme.spacing.md, paddingTop: 60, paddingBottom: 90 },
-  eyebrow: { color: theme.colors.bronze, letterSpacing: 1.5, marginTop: theme.spacing.sm },
-  title: { fontFamily: theme.fonts.displayItalic, fontSize: 32, lineHeight: 40 },
-  list: { gap: 12, marginTop: theme.spacing.sm },
-  card: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, backgroundColor: theme.colors.surface, padding: 20, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.divider },
-  cardActive: { borderColor: theme.colors.bronze, backgroundColor: theme.colors.background },
-  cardText: { flex: 1, gap: 4 },
-  cardTitle: { fontFamily: theme.fonts.display, fontSize: 19 },
+  container: { padding: space[6], paddingTop: space[8], gap: space[4] },
+  back: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.stone },
+  eyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.copper, marginTop: space[4] },
+  headline: { fontFamily: typography.families.displayItalic, fontSize: 28, color: colors.ink },
+  sub: { fontFamily: typography.families.body, fontSize: 14, color: colors.stone, marginBottom: space[3] },
+  card: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[4], backgroundColor: colors.creamCard, padding: space[5], borderRadius: radius.md, borderWidth: 1, borderColor: colors.hairline },
+  cardActive: { borderColor: colors.copper },
+  cardText: { flex: 1, gap: 3 },
+  cardTitle: { fontFamily: typography.families.bodySemibold, fontSize: 15, color: colors.ink },
+  cardSub: { fontFamily: typography.families.body, fontSize: 13, color: colors.stone },
 });

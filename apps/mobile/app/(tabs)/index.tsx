@@ -3,16 +3,17 @@ import { StyleSheet, View, ScrollView, Pressable, Text } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
-import { getDiscoveries } from '@intentional/database';
+import { getDiscoveries, getPreference } from '@intentional/database';
 import { getDb } from '../../lib/db';
 import { nextRevisit } from '../../lib/revisit';
 import type { Discovery } from '@intentional/domain';
 import { colors, typography, space, radius, elevation } from '@intentional/ui';
+import { MountainDusk } from '../../components/Scenery';
 
 const PRACTICES = [
   { label: 'Learn', sub: 'Explore something curious.', icon: 'book-open' as const, path: '/learn' },
   { label: 'Journal', sub: 'Give your thoughts some space.', icon: 'edit-3' as const, path: '/journal' },
-  { label: 'Notice', sub: 'Pay attention to what\'s around you.', icon: 'eye' as const, path: '/notice' },
+  { label: 'Notice', sub: "Pay attention to what's around you.", icon: 'eye' as const, path: '/notice' },
   { label: 'Choose', sub: 'Think before deciding.', icon: 'compass' as const, path: '/choose' },
   { label: 'Zoom Out', sub: 'See the bigger picture.', icon: 'globe' as const, path: '/zoomout' },
 ];
@@ -27,18 +28,37 @@ function greeting(): string {
 
 export default function HomeScreen() {
   const [memory, setMemory] = useState<Discovery | null>(null);
+  const [activeSession, setActiveSession] = useState<string>('');
 
   useEffect(() => {
-    void (async () => setMemory(await nextRevisit(await getDiscoveries(await getDb()))))();
+    void (async () => {
+      setMemory(await nextRevisit(await getDiscoveries(await getDb())));
+      setActiveSession((await getPreference(await getDb(), 'activeSession')) || '');
+    })();
   }, []);
+
+  function returnToSession() {
+    if (activeSession === 'notice') router.push('/notice');
+    else if (activeSession === 'challenge') router.push('/challenge');
+    else if (activeSession === 'journal') router.push('/journal');
+  }
 
   return (
     <LinearGradient colors={[colors.night, colors.nightSoft]} style={styles.gradient}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <MountainDusk />
+      <ScrollView contentContainerStyle={styles.container} style={styles.above}>
         <View style={styles.topRow}>
           <Text style={styles.greeting}>{greeting()}</Text>
           <View style={styles.avatar}><Feather name="user" size={16} color={colors.cream} /></View>
         </View>
+
+        {activeSession && (
+          <Pressable style={styles.sessionCard} onPress={returnToSession}>
+            <Feather name="activity" size={16} color={colors.copper} />
+            <Text style={styles.sessionText}>You have a session in progress</Text>
+            <Feather name="chevron-right" size={16} color={colors.cream} />
+          </Pressable>
+        )}
 
         <Text style={styles.headline}>What deserves{"\n"}your attention{"\n"}now?</Text>
 
@@ -54,8 +74,7 @@ export default function HomeScreen() {
             </Pressable>
           ))}
         </View>
-
-        <View style={{ height: 24 }} />
+        <View style={{ height: 90 }} />
       </ScrollView>
 
       {memory !== null && (
@@ -73,10 +92,13 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
+  above: { zIndex: 1 },
   container: { padding: space[6], paddingTop: space[9] },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space[5] },
   greeting: { fontFamily: typography.families.displayItalic, fontSize: 17, color: colors.cream, opacity: 0.75 },
   avatar: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: colors.hairlineDark, alignItems: 'center', justifyContent: 'center' },
+  sessionCard: { flexDirection: 'row', alignItems: 'center', gap: space[3], backgroundColor: colors.nightCard, borderRadius: radius.md, padding: space[4], marginBottom: space[5] },
+  sessionText: { flex: 1, fontFamily: typography.families.bodyMedium, fontSize: 14, color: colors.cream },
   headline: { fontFamily: typography.families.display, fontSize: 32, lineHeight: 40, color: colors.cream, marginBottom: space[7] },
   card: { backgroundColor: colors.creamCard, borderRadius: radius.lg, paddingHorizontal: space[4], ...elevation.floating },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: space[4], gap: space[3] },

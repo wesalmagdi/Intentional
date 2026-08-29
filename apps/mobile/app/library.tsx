@@ -4,7 +4,8 @@ import { router } from 'expo-router';
 import { getDiscoveries } from '@intentional/database';
 import { getDb } from '../lib/db';
 import type { Discovery } from '@intentional/domain';
-import { Display, Body, Subtle, Label, BackBar, theme } from '@intentional/ui';
+import { colors, typography, space, radius } from '@intentional/ui';
+import { Botanical } from '../components/Scenery';
 
 export default function LibraryScreen() {
   const [items, setItems] = useState<Discovery[]>([]);
@@ -16,10 +17,11 @@ export default function LibraryScreen() {
   const visible = filter === 'All' ? items : items.filter(i => (i.folderName || i.category) === filter);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <BackBar label="Home" onPress={() => router.push('/')} />
-      <Label style={styles.eyebrow}>LIBRARY</Label>
-      <Display>What you've kept.</Display>
+    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+      <Botanical />
+      <Pressable onPress={() => router.push('/')}><Text style={styles.back}>← Home</Text></Pressable>
+      <Text style={styles.eyebrow}>LIBRARY</Text>
+      <Text style={styles.headline}>What you've kept.</Text>
 
       {items.length > 0 && (
         <View style={styles.chips}>
@@ -31,41 +33,45 @@ export default function LibraryScreen() {
         </View>
       )}
 
-      {visible.length === 0 && <Subtle style={{ marginTop: 20 }}>Nothing here yet.</Subtle>}
+      {visible.length === 0 && <Text style={styles.empty}>Nothing here yet.</Text>}
       {visible.map(d => (
         <Pressable key={d.id} onPress={() => router.push({ pathname: '/discovery', params: { id: d.id } })}>
           <View style={styles.card}>
-            <Label style={styles.cardEyebrow}>{d.folderName || d.category}</Label>
-            <Body style={styles.prompt}>"{d.prompt}"</Body>
-            {Object.values(d.findings).filter(t => t && t.trim().length > 0).map((text, i) => (
-              <Body key={i} style={styles.finding}>{text}</Body>
+            <Text style={styles.cardEyebrow}>{d.folderName || d.category}</Text>
+            <Text style={styles.prompt}>"{d.prompt}"</Text>
+            {Object.values(d.findings).filter(t => t && t.trim().length > 0).slice(0, 2).map((text, i) => (
+              <Text key={i} style={styles.finding} numberOfLines={2}>{text}</Text>
             ))}
             <View style={styles.rule} />
             <View style={styles.footer}>
-              <Subtle style={styles.date}>{new Date(d.createdAt).toLocaleDateString()}</Subtle>
-              {d.sources ? <Subtle style={styles.sources}>{d.sources}</Subtle> : null}
+              <Text style={styles.date}>{new Date(d.createdAt).toLocaleDateString()}</Text>
+              {d.sources ? <Text style={styles.sources} numberOfLines={1}>{d.sources}</Text> : null}
             </View>
           </View>
         </Pressable>
       ))}
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: theme.spacing.lg, gap: theme.spacing.md, paddingTop: 60, paddingBottom: 90 },
-  eyebrow: { color: theme.colors.bronze, letterSpacing: 1.5, marginTop: theme.spacing.sm },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, borderWidth: 1, borderColor: theme.colors.divider },
-  chipActive: { backgroundColor: theme.colors.ink, borderColor: theme.colors.ink },
-  chipText: { fontFamily: theme.fonts.bodyMedium, fontSize: 13, color: theme.colors.grey },
-  chipTextActive: { color: theme.colors.ivory },
-  card: { backgroundColor: theme.colors.surface, padding: 24, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.divider, gap: 12, marginBottom: 16 },
-  cardEyebrow: { letterSpacing: 1.2, color: theme.colors.bronze, fontSize: 10 },
-  prompt: { fontFamily: theme.fonts.displayItalic, fontSize: 22, lineHeight: 30 },
-  finding: { fontSize: 16, lineHeight: 24 },
-  rule: { height: 1, backgroundColor: theme.colors.divider, marginTop: 6 },
+  container: { padding: space[6], paddingTop: space[8], gap: space[4] },
+  back: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.stone },
+  eyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.copper, marginTop: space[4] },
+  headline: { fontFamily: typography.families.displayItalic, fontSize: 28, color: colors.ink },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2] },
+  chip: { paddingHorizontal: space[4], paddingVertical: space[2], borderRadius: radius.pill, borderWidth: 1, borderColor: colors.hairline },
+  chipActive: { backgroundColor: colors.ink, borderColor: colors.ink },
+  chipText: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.ink },
+  chipTextActive: { color: colors.cream },
+  empty: { fontFamily: typography.families.body, fontSize: 14, color: colors.stone, marginTop: space[3] },
+  card: { backgroundColor: colors.creamCard, padding: space[5], borderRadius: radius.md, borderWidth: 1, borderColor: colors.hairline, gap: space[3], marginBottom: space[3] },
+  cardEyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 10, letterSpacing: 1.2, color: colors.copper },
+  prompt: { fontFamily: typography.families.displayItalic, fontSize: 20, lineHeight: 28, color: colors.ink },
+  finding: { fontFamily: typography.families.body, fontSize: 14, lineHeight: 22, color: colors.inkSoft },
+  rule: { height: 1, backgroundColor: colors.hairline, marginTop: space[1] },
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  date: { fontSize: 12, letterSpacing: 1 },
-  sources: { fontStyle: 'italic', fontSize: 12 },
+  date: { fontFamily: typography.families.body, fontSize: 12, color: colors.stone },
+  sources: { fontFamily: typography.families.body, fontSize: 12, color: colors.stone, fontStyle: 'italic', flex: 1, textAlign: 'right' },
 });

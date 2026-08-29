@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Pressable, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Pressable, TextInput, View, Text } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { getJournalEntry, saveJournalEntry } from '@intentional/database';
 import { getDb } from '../lib/db';
 import type { JournalEntry } from '@intentional/domain';
-import { Display, Body, Subtle, Label, BackBar, theme } from '@intentional/ui';
+import { colors, typography, space, radius } from '@intentional/ui';
+import { Botanical } from '../components/Scenery';
 
 export default function EntryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -31,52 +32,48 @@ export default function EntryScreen() {
     setEditing(false);
   }
 
-  if (!entry) return <View style={styles.container} />;
+  if (!entry) return <View style={{ flex: 1, backgroundColor: colors.cream }} />;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <BackBar label="Journal" onPress={() => router.push('/journal')} />
-      
+    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+      <Botanical />
       <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <Label style={styles.date}>{new Date(entry.createdAt).toLocaleDateString()}</Label>
-          {entry.prompt ? <Subtle style={styles.prompt}>{entry.prompt}</Subtle> : null}
-        </View>
-        {!editing && (
-          <Pressable onPress={() => setEditing(true)} hitSlop={12}>
-            <Feather name="edit-2" size={20} color={theme.colors.bronze} />
-          </Pressable>
-        )}
+        <Pressable onPress={() => router.push('/journal')}><Text style={styles.back}>← Journal</Text></Pressable>
+        {!editing && <Pressable onPress={() => setEditing(true)} hitSlop={12}><Feather name="edit-2" size={18} color={colors.copper} /></Pressable>}
       </View>
+
+      <Text style={styles.date}>{new Date(entry.createdAt).toLocaleDateString()}</Text>
+      {entry.prompt ? <Text style={styles.prompt}>{entry.prompt}</Text> : null}
 
       {editing ? (
         <>
-          <TextInput style={styles.input} multiline autoFocus value={draft} onChangeText={setDraft} />
+          <View style={styles.area}>
+            <TextInput style={styles.areaInput} multiline autoFocus value={draft} onChangeText={setDraft} />
+          </View>
           <View style={styles.actions}>
-            <Pressable style={styles.saveBtn} onPress={() => void handleSave()}>
-              <Body style={styles.saveText}>Update</Body>
-            </Pressable>
-            <Pressable style={styles.cancelBtn} onPress={() => { setDraft(entry.body); setEditing(false); }}>
-              <Body>Cancel</Body>
-            </Pressable>
+            <Pressable style={styles.keepBtn} onPress={() => void handleSave()}><Text style={styles.keepText}>Update</Text></Pressable>
+            <Pressable style={styles.ghostBtn} onPress={() => { setDraft(entry.body); setEditing(false); }}><Text style={styles.ghostText}>Cancel</Text></Pressable>
           </View>
         </>
       ) : (
-        <Body style={styles.body}>{entry.body}</Body>
+        <Text style={styles.body}>{entry.body}</Text>
       )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: theme.spacing.lg, gap: theme.spacing.md, paddingTop: 60, paddingBottom: 80 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 },
-  date: { letterSpacing: 1.5, color: theme.colors.bronze },
-  prompt: { fontFamily: theme.fonts.displayItalic, fontSize: 20, lineHeight: 28, marginTop: 8 },
-  body: { fontSize: 18, lineHeight: 30, marginTop: 10 },
-  input: { fontSize: 18, fontFamily: theme.fonts.body, color: theme.colors.ink, lineHeight: 30, textAlignVertical: 'top', minHeight: 300, marginTop: 10, borderWidth: 1, borderColor: theme.colors.divider, borderRadius: theme.radius.md, padding: 16 },
-  actions: { flexDirection: 'row', gap: 12, marginTop: 20 },
-  saveBtn: { flex: 1, backgroundColor: theme.colors.bronze, padding: 16, borderRadius: theme.radius.md, alignItems: 'center' },
-  saveText: { color: theme.colors.ivory, fontFamily: theme.fonts.bodySemibold },
-  cancelBtn: { flex: 1, padding: 16, borderRadius: theme.radius.md, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.divider },
+  container: { padding: space[6], paddingTop: space[8], gap: space[4] },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  back: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.stone },
+  date: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.copper },
+  prompt: { fontFamily: typography.families.displayItalic, fontSize: 20, lineHeight: 28, color: colors.ink },
+  body: { fontFamily: typography.families.body, fontSize: 17, lineHeight: 29, color: colors.inkSoft, marginTop: space[2] },
+  area: { backgroundColor: colors.creamCard, borderWidth: 1, borderColor: colors.hairline, borderRadius: radius.sm, padding: space[4], minHeight: 240 },
+  areaInput: { fontFamily: typography.families.body, fontSize: 17, color: colors.ink, minHeight: 220, textAlignVertical: 'top', lineHeight: 29 },
+  actions: { flexDirection: 'row', gap: space[3] },
+  keepBtn: { flex: 1, backgroundColor: colors.copperDeep, padding: 16, borderRadius: radius.sm, alignItems: 'center' },
+  keepText: { color: colors.cream, fontFamily: typography.families.bodySemibold, fontSize: 15 },
+  ghostBtn: { flex: 1, padding: 16, borderRadius: radius.sm, alignItems: 'center', borderWidth: 1, borderColor: colors.hairline },
+  ghostText: { color: colors.ink, fontFamily: typography.families.bodySemibold, fontSize: 15 },
 });

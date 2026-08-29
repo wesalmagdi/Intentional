@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Pressable, TextInput } from 'react-native';
+import { ScrollView, StyleSheet, Pressable, TextInput, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FS from 'expo-file-system/legacy';
-const FileSystem = FS as any;
 import { saveReading } from '@intentional/database';
 import { getDb } from '../lib/db';
-import { Display, Body, Subtle, Label, BackBar, theme } from '@intentional/ui';
+import { colors, typography, space, radius } from '@intentional/ui';
+import { Botanical } from '../components/Scenery';
+
+const FileSystem = FS as any;
 
 export default function AddReadingScreen() {
   const [title, setTitle] = useState('');
@@ -23,56 +25,40 @@ export default function AddReadingScreen() {
 
   async function handleKeep() {
     if (title.trim().length === 0 || bodyText.trim().length === 0) return;
-    const db = await getDb();
-    await saveReading(db, {
-      id: Date.now().toString(),
-      title: title.trim(),
-      body: bodyText.trim(),
-      createdAt: new Date().toISOString(),
+    await saveReading(await getDb(), {
+      id: Date.now().toString(), title: title.trim(), body: bodyText.trim(), createdAt: new Date().toISOString(),
     });
     router.replace('/reading');
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <BackBar label="Reading Room" onPress={() => router.push('/reading')} />
-      <Label style={styles.eyebrow}>ADD A READING</Label>
-      <Display style={styles.title}>Put it on the desk.</Display>
+    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+      <Botanical />
+      <Pressable onPress={() => router.push('/reading')}><Text style={styles.back}>← Reading Room</Text></Pressable>
+      <Text style={styles.eyebrow}>ADD A READING</Text>
+      <Text style={styles.headline}>Put it on the desk.</Text>
 
-      <TextInput
-        style={styles.titleInput}
-        placeholder="Title"
-        placeholderTextColor={theme.colors.grey}
-        value={title}
-        onChangeText={setTitle}
-      />
-      <TextInput
-        style={styles.bodyInput}
-        multiline
-        placeholder="Paste an excerpt — a paragraph is enough."
-        placeholderTextColor={theme.colors.grey}
-        value={bodyText}
-        onChangeText={setBodyText}
-      />
+      <TextInput style={styles.titleInput} placeholder="Title" placeholderTextColor={colors.stone} value={title} onChangeText={setTitle} />
+      <View style={styles.area}>
+        <TextInput style={styles.areaInput} multiline placeholder="Paste an excerpt — a paragraph is enough." placeholderTextColor={colors.stone} value={bodyText} onChangeText={setBodyText} />
+      </View>
 
-      <Pressable style={styles.ghostBtn} onPress={() => void importFile()}>
-        <Body style={styles.ghostText}>Import .txt / .md</Body>
-      </Pressable>
-      <Pressable style={styles.keepBtn} onPress={() => void handleKeep()}>
-        <Body style={styles.keepText}>Keep this reading.</Body>
-      </Pressable>
+      <Pressable style={styles.ghostBtn} onPress={() => void importFile()}><Text style={styles.ghostText}>Import .txt / .md</Text></Pressable>
+      <Pressable style={styles.keepBtn} onPress={() => void handleKeep()}><Text style={styles.keepText}>Keep this reading.</Text></Pressable>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: theme.spacing.lg, gap: theme.spacing.md, paddingTop: 60, paddingBottom: 90 },
-  eyebrow: { color: theme.colors.bronze, letterSpacing: 1.5, marginTop: theme.spacing.sm },
-  title: { fontFamily: theme.fonts.displayItalic, fontSize: 30, lineHeight: 38 },
-  titleInput: { borderBottomWidth: 1, borderBottomColor: theme.colors.divider, paddingVertical: 12, fontSize: 20, fontFamily: theme.fonts.display, color: theme.colors.ink },
-  bodyInput: { borderWidth: 1, borderColor: theme.colors.divider, borderRadius: theme.radius.md, padding: theme.spacing.md, fontSize: 16, fontFamily: theme.fonts.body, color: theme.colors.ink, minHeight: 220, textAlignVertical: 'top', lineHeight: 26, backgroundColor: theme.colors.surface },
-  ghostBtn: { padding: 14, borderRadius: theme.radius.md, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.divider },
-  ghostText: { color: theme.colors.ink, fontFamily: theme.fonts.bodySemibold },
-  keepBtn: { backgroundColor: theme.colors.bronze, padding: 18, borderRadius: theme.radius.md, alignItems: 'center' },
-  keepText: { color: theme.colors.ivory, fontFamily: theme.fonts.bodySemibold, fontSize: 16 },
+  container: { padding: space[6], paddingTop: space[8], gap: space[4] },
+  back: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.stone },
+  eyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.copper, marginTop: space[4] },
+  headline: { fontFamily: typography.families.displayItalic, fontSize: 28, color: colors.ink },
+  titleInput: { borderBottomWidth: 1, borderBottomColor: colors.hairline, paddingVertical: space[3], fontSize: 19, fontFamily: typography.families.display, color: colors.ink },
+  area: { backgroundColor: colors.creamCard, borderWidth: 1, borderColor: colors.hairline, borderRadius: radius.md, padding: space[4] },
+  areaInput: { fontFamily: typography.families.body, fontSize: 15, color: colors.ink, minHeight: 200, textAlignVertical: 'top', lineHeight: 25 },
+  ghostBtn: { padding: 15, borderRadius: radius.sm, alignItems: 'center', borderWidth: 1, borderColor: colors.hairline },
+  ghostText: { color: colors.ink, fontFamily: typography.families.bodySemibold, fontSize: 14 },
+  keepBtn: { backgroundColor: colors.copperDeep, padding: 17, borderRadius: radius.sm, alignItems: 'center' },
+  keepText: { color: colors.cream, fontFamily: typography.families.bodySemibold, fontSize: 15 },
 });

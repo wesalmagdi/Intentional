@@ -6,11 +6,10 @@ import { getReading } from '@intentional/database';
 import { getDb } from '../lib/db';
 import { resonantWith } from '../lib/resonance';
 import type { Reading } from '@intentional/domain';
-import { Display, Body, Subtle, Label, BackBar, theme } from '@intentional/ui';
+import { colors, typography, space, radius } from '@intentional/ui';
+import { Botanical } from '../components/Scenery';
 
-function snippet(t: string): string {
-  return t.length > 140 ? `${t.slice(0, 140)}…` : t;
-}
+function snippet(t: string): string { return t.length > 140 ? `${t.slice(0, 140)}…` : t; }
 
 export default function ReadingViewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -26,66 +25,64 @@ export default function ReadingViewScreen() {
     })();
   }, [id]);
 
-  if (!reading) return <View style={styles.blank} />;
+  if (!reading) return <View style={{ flex: 1, backgroundColor: colors.cream }} />;
 
   const concepts = keyConcepts(reading.body, 5);
   const seeds = questionSeeds(reading.body, reading.title, 3);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <BackBar label="Reading Room" onPress={() => router.push('/reading')} />
-      <Label style={styles.eyebrow}>READING ROOM</Label>
-      <Display style={styles.title}>{reading.title}</Display>
-      <Subtle>{new Date(reading.createdAt).toLocaleDateString()}</Subtle>
+    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+      <Botanical />
+      <Pressable onPress={() => router.push('/reading')}><Text style={styles.back}>← Reading Room</Text></Pressable>
+      <Text style={styles.eyebrow}>READING ROOM</Text>
+      <Text style={styles.headline}>{reading.title}</Text>
+      <Text style={styles.meta}>{new Date(reading.createdAt).toLocaleDateString()}</Text>
 
-      <Body style={styles.body}>{reading.body}</Body>
+      <Text style={styles.body}>{reading.body}</Text>
 
       {concepts.length > 0 && (
         <View style={styles.chips}>
-          {concepts.map(c => (
-            <View key={c} style={styles.chip}><Text style={styles.chipText}>{c}</Text></View>
-          ))}
+          {concepts.map(c => <View key={c} style={styles.chip}><Text style={styles.chipText}>{c}</Text></View>)}
         </View>
       )}
 
       {echo !== null && (
         <View style={styles.echoCard}>
-          <Subtle style={styles.echoLabel}>FROM YOUR LIBRARY — IT ECHOES</Subtle>
-          <Body style={styles.echoText} numberOfLines={3}>"{snippet(echo.note.text)}"</Body>
-          <Subtle style={styles.echoDate}>{new Date(echo.note.createdAt).toLocaleDateString()}</Subtle>
+          <Text style={styles.echoLabel}>FROM YOUR LIBRARY — IT ECHOES</Text>
+          <Text style={styles.echoText} numberOfLines={3}>"{snippet(echo.note.text)}"</Text>
+          <Text style={styles.echoDate}>{new Date(echo.note.createdAt).toLocaleDateString()}</Text>
         </View>
       )}
 
-      <Label style={styles.seedsLabel}>THE ROOM ASKS</Label>
+      <Text style={styles.seedsLabel}>THE ROOM ASKS</Text>
       {seeds.map(seed => (
-        <Pressable
-          key={seed}
-          style={styles.seedCard}
-          onPress={() => router.push({ pathname: '/challenge', params: { prompt: seed, intention: `From "${reading.title}"`, category: 'Reading Room' } })}
-        >
-          <Body style={styles.seedText}>{seed}</Body>
-          <Subtle style={styles.seedCta}>Begin 10 minutes →</Subtle>
+        <Pressable key={seed} style={styles.seedCard}
+          onPress={() => router.push({ pathname: '/challenge', params: { prompt: seed, intention: `From "${reading.title}"`, category: 'Reading Room' } })}>
+          <Text style={styles.seedText}>{seed}</Text>
+          <Text style={styles.seedCta}>Begin 10 minutes →</Text>
         </Pressable>
       ))}
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  blank: { flex: 1, backgroundColor: theme.colors.background },
-  container: { padding: theme.spacing.lg, gap: theme.spacing.md, paddingTop: 60, paddingBottom: 90 },
-  eyebrow: { color: theme.colors.bronze, letterSpacing: 1.5, marginTop: theme.spacing.sm },
-  title: { fontFamily: theme.fonts.displayItalic, fontSize: 30, lineHeight: 38 },
-  body: { fontSize: 17, lineHeight: 28, marginTop: theme.spacing.sm },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.divider },
-  chipText: { fontFamily: theme.fonts.bodyMedium, fontSize: 12, color: theme.colors.grey },
-  echoCard: { borderWidth: 1, borderColor: theme.colors.bronze, borderRadius: theme.radius.md, padding: 18, gap: 8, backgroundColor: theme.colors.background },
-  echoLabel: { color: theme.colors.bronze, letterSpacing: 1.5, fontSize: 10 },
-  echoText: { fontFamily: theme.fonts.displayItalic, fontSize: 17, lineHeight: 25 },
-  echoDate: { fontSize: 12, letterSpacing: 1 },
-  seedsLabel: { letterSpacing: 1.2, fontSize: 10, marginTop: theme.spacing.sm },
-  seedCard: { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.divider, borderRadius: theme.radius.md, padding: 20, gap: 10 },
-  seedText: { fontFamily: theme.fonts.display, fontSize: 19, lineHeight: 27 },
-  seedCta: { color: theme.colors.bronze },
+  container: { padding: space[6], paddingTop: space[8], gap: space[4] },
+  back: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.stone },
+  eyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.copper, marginTop: space[4] },
+  headline: { fontFamily: typography.families.displayItalic, fontSize: 27, lineHeight: 35, color: colors.ink },
+  meta: { fontFamily: typography.families.body, fontSize: 12, color: colors.stone },
+  body: { fontFamily: typography.families.body, fontSize: 16, lineHeight: 27, color: colors.inkSoft, marginTop: space[2] },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2] },
+  chip: { paddingHorizontal: space[3], paddingVertical: space[1] + 2, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.hairline },
+  chipText: { fontFamily: typography.families.bodyMedium, fontSize: 12, color: colors.stone },
+  echoCard: { borderWidth: 1, borderColor: colors.copper, borderRadius: radius.md, padding: space[4], gap: space[2], backgroundColor: colors.creamCard },
+  echoLabel: { fontFamily: typography.families.body, fontSize: 10, letterSpacing: 1.5, color: colors.copper },
+  echoText: { fontFamily: typography.families.displayItalic, fontSize: 16, lineHeight: 24, color: colors.inkSoft },
+  echoDate: { fontFamily: typography.families.body, fontSize: 11, color: colors.stone },
+  seedsLabel: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.stone, marginTop: space[3] },
+  seedCard: { backgroundColor: colors.creamCard, borderWidth: 1, borderColor: colors.hairline, borderRadius: radius.md, padding: space[5], gap: space[2] },
+  seedText: { fontFamily: typography.families.display, fontSize: 18, lineHeight: 26, color: colors.ink },
+  seedCta: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.copper },
 });

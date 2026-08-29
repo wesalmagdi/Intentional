@@ -5,19 +5,11 @@ import { Feather } from '@expo/vector-icons';
 import { setPreference } from '@intentional/database';
 import { getDb } from '../lib/db';
 import { colors, typography, space, radius } from '@intentional/ui';
-
-const STARS = [
-  { top: '10%' as any, left: '15%' as any }, { top: '18%' as any, left: '70%' as any }, { top: '8%' as any, left: '45%' as any },
-  { top: '26%' as any, left: '30%' as any }, { top: '14%' as any, left: '88%' as any }, { top: '30%' as any, left: '80%' as any },
-  { top: '24%' as any, left: '8%' as any }, { top: '34%' as any, left: '55%' as any },
-];
+import { HorizonGlow } from '../components/Scenery';
 
 const OPTIONS = [
-  { label: '1 week', days: 7 },
-  { label: '1 month', days: 30 },
-  { label: '6 months', days: 180 },
-  { label: '1 year', days: 365 },
-  { label: 'Choose date', days: 90 },
+  { label: '1 week', days: 7 }, { label: '1 month', days: 30 },
+  { label: '6 months', days: 180 }, { label: '1 year', days: 365 }, { label: 'Choose date', days: 90 },
 ];
 
 export default function SavedScreen() {
@@ -33,8 +25,7 @@ export default function SavedScreen() {
 
   return (
     <LinearGradient colors={[colors.night, colors.nightSoft]} style={styles.gradient}>
-      {STARS.map((s, i) => <View key={i} style={[styles.star, { top: s.top, left: s.left }]} />)}
-
+      <HorizonGlow />
       <View style={styles.checkWrap}>
         <View style={styles.checkRing}><Feather name="check" size={30} color={colors.copperSoft} /></View>
       </View>
@@ -58,7 +49,6 @@ export default function SavedScreen() {
 
 const styles = StyleSheet.create({
   gradient: { flex: 1, padding: space[6] },
-  star: { position: 'absolute', width: 3, height: 3, borderRadius: 2, backgroundColor: colors.cream, opacity: 0.35 },
   checkWrap: { alignItems: 'center', marginTop: space[10] },
   checkRing: { width: 84, height: 84, borderRadius: 42, borderWidth: 1.5, borderColor: colors.copperSoft, alignItems: 'center', justifyContent: 'center' },
   saved: { fontFamily: typography.families.display, fontSize: 30, color: colors.cream, textAlign: 'center', marginTop: space[5] },
