@@ -1,51 +1,37 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Pressable, TextInput } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable, Text, TextInput } from 'react-native';
 import { router } from 'expo-router';
-import { isRevisitWorthy, type Discovery } from '@intentional/domain';
+import { Feather } from '@expo/vector-icons';
 import { getDiscoveries } from '@intentional/database';
 import { getDb } from '../lib/db';
-import { pickResonant } from '../lib/resonance';
-import { Display, Body, Subtle, Label, BackBar, theme } from '@intentional/ui';
+import { nextRevisit, timeAgo } from '../lib/revisit';
+import type { Discovery } from '@intentional/domain';
+import { colors, typography, space, radius } from '@intentional/ui';
 
 export default function RevisitScreen() {
-  const [pool, setPool] = useState<Discovery[]>([]);
   const [current, setCurrent] = useState<Discovery | null>(null);
-  const [byEcho, setByEcho] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [memory, setMemory] = useState('');
+  const [nowThought, setNowThought] = useState('');
+  const [since, setSince] = useState('');
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
     void (async () => {
-      const all = await getDiscoveries(await getDb());
-      const worthy = all.filter(d => isRevisitWorthy(d.createdAt, new Date()));
-      const picked = await pickResonant(worthy);
-      setPool(worthy);
-      setCurrent(picked.discovery);
-      setByEcho(picked.byEcho);
+      setCurrent(await nextRevisit(await getDiscoveries(await getDb())));
       setLoaded(true);
     })();
   }, []);
 
-  function another() {
-    if (pool.length === 0) return;
-    setCurrent(pool[Math.floor(Math.random() * pool.length)]);
-    setByEcho(false);
-    setMemory('');
-    setRevealed(false);
-  }
-
-  if (!loaded) return <View style={styles.blank} />;
+  if (!loaded) return <View style={{ flex: 1, backgroundColor: colors.cream }} />;
 
   if (current === null) {
     return (
-      <View style={styles.screen}>
-        <View style={styles.center}>
-          <Body style={styles.ornament}>❦</Body>
-          <Display style={styles.headline}>Nothing is ready yet.</Display>
-          <Subtle style={styles.centerSub}>Discoveries ripen for a few days{"\n"}before they're worth revisiting.</Subtle>
-          <Pressable style={styles.homeBtn} onPress={() => router.push('/')}><Body style={styles.homeText}>Home</Body></Pressable>
-        </View>
+      <View style={styles.center}>
+        <Text style={styles.ornament}>❦</Text>
+        <Text style={styles.headline}>Nothing is ready yet.</Text>
+        <Text style={styles.centerSub}>Discoveries ripen for a few days{"\n"}before they're worth revisiting.</Text>
+        <Pressable style={styles.homeBtn} onPress={() => router.push('/')}><Text style={styles.homeText}>Home</Text></Pressable>
       </View>
     );
   }
@@ -53,70 +39,63 @@ export default function RevisitScreen() {
   const original = Object.values(current.findings).filter(t => t && t.trim().length > 0).join('\n\n');
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <BackBar label="Home" onPress={() => router.push('/')} />
-      <Body style={styles.ornament}>❦</Body>
-      <Label style={styles.eyebrow}>REVISIT</Label>
-      <Subtle style={styles.date}>{new Date(current.createdAt).toLocaleDateString()} · {current.category}</Subtle>
-      {byEcho && !revealed && <Subtle style={styles.echoNote}>It echoes your recent writing.</Subtle>}
-      <Display style={styles.headline}>"{current.prompt}"</Display>
+    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} hitSlop={12}><Feather name="chevron-left" size={22} color={colors.ink} /></Pressable>
+        {!revealed && <Pressable onPress={() => router.push('/')}><Text style={styles.skip}>Skip</Text></Pressable>}
+        {revealed && <Pressable onPress={() => router.push('/')}><Text style={styles.skip}>Done</Text></Pressable>}
+      </View>
 
       {!revealed ? (
         <>
-          <Body style={styles.ask}>What do you remember?</Body>
-          <TextInput
-            style={styles.input}
-            multiline
-            placeholder="Write what stayed with you..."
-            placeholderTextColor={theme.colors.grey}
-            value={memory}
-            onChangeText={setMemory}
-          />
-          <Pressable style={styles.keepBtn} onPress={() => setRevealed(true)}>
-            <Body style={styles.keepText}>Reveal</Body>
+          <View style={styles.plantWrap}><View style={styles.plantCircle}><Feather name="feather" size={18} color={colors.copper} /></View></View>
+          <Text style={styles.caption}>You explored this {timeAgo(current.createdAt)}.</Text>
+          <Text style={styles.headline}>{current.prompt}</Text>
+          <View style={styles.rule} />
+          <Text style={styles.caption}>Before reading your old notes:</Text>
+          <Text style={styles.label}>What do you remember?</Text>
+          <View style={styles.area}>
+            <TextInput style={styles.areaInput} multiline placeholder="Write what you recall..." placeholderTextColor={colors.stone} value={memory} onChangeText={setMemory} />
+          </View>
+          <Pressable style={styles.revealBtn} onPress={() => setRevealed(true)}>
+            <Text style={styles.revealText}>Reveal my old notes</Text>
           </Pressable>
         </>
       ) : (
         <>
-          <View style={styles.compare}>
-            <Label style={styles.compareLabel}>YOU REMEMBERED</Label>
-            <Body style={styles.compareText}>{memory.trim().length > 0 ? memory : '…'}</Body>
-            <View style={styles.rule} />
-            <Label style={styles.compareLabel}>ORIGINALLY</Label>
-            <Body style={styles.compareText}>{original || '…'}</Body>
-          </View>
-          <Subtle style={styles.closing}>Memory is a practice.</Subtle>
-          <View style={styles.actions}>
-            <Pressable style={styles.keepBtn} onPress={another}><Body style={styles.keepText}>Another</Body></Pressable>
-            <Pressable style={styles.homeBtn} onPress={() => router.push('/')}><Body style={styles.homeText}>Home</Body></Pressable>
-          </View>
+          <Text style={styles.caption}>Your notes from {new Date(current.createdAt).toLocaleDateString()}</Text>
+          <View style={styles.oldCard}><Text style={styles.oldText}>{original || '…'}</Text></View>
+          <Text style={styles.label}>What do you think now?</Text>
+          <View style={styles.area}><TextInput style={styles.areaInput} multiline placeholder="Write your new thoughts..." placeholderTextColor={colors.stone} value={nowThought} onChangeText={setNowThought} /></View>
+          <Text style={styles.label}>What did you learn since then?</Text>
+          <View style={styles.area}><TextInput style={styles.areaInput} multiline placeholder="Optional" placeholderTextColor={colors.stone} value={since} onChangeText={setSince} /></View>
+          <Pressable style={styles.revealBtn} onPress={() => router.push('/')}><Text style={styles.revealText}>Done</Text></Pressable>
         </>
       )}
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, padding: theme.spacing.lg, paddingTop: 60 },
-  blank: { flex: 1, backgroundColor: theme.colors.background },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: theme.spacing.md },
-  centerSub: { textAlign: 'center', lineHeight: 24 },
-  container: { padding: theme.spacing.lg, gap: theme.spacing.md, paddingTop: 60, paddingBottom: 90 },
-  ornament: { color: theme.colors.bronze, fontSize: 24, textAlign: 'center', marginTop: theme.spacing.sm },
-  eyebrow: { color: theme.colors.bronze, letterSpacing: 1.5, textAlign: 'center' },
-  date: { textAlign: 'center', letterSpacing: 1 },
-  echoNote: { textAlign: 'center', fontStyle: 'italic', color: theme.colors.bronze },
-  headline: { fontFamily: theme.fonts.displayItalic, fontSize: 30, lineHeight: 40, textAlign: 'center' },
-  ask: { fontFamily: theme.fonts.bodySemibold, marginTop: theme.spacing.sm },
-  input: { borderWidth: 1, borderColor: theme.colors.divider, borderRadius: theme.radius.md, padding: theme.spacing.md, fontSize: 17, fontFamily: theme.fonts.body, color: theme.colors.ink, minHeight: 130, textAlignVertical: 'top', backgroundColor: theme.colors.surface, lineHeight: 26 },
-  keepBtn: { flex: 1, backgroundColor: theme.colors.bronze, padding: 18, borderRadius: theme.radius.md, alignItems: 'center' },
-  keepText: { color: theme.colors.ivory, fontFamily: theme.fonts.bodySemibold, fontSize: 16 },
-  compare: { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.divider, borderRadius: theme.radius.md, padding: 24, gap: 12, marginTop: theme.spacing.sm },
-  compareLabel: { color: theme.colors.bronze, letterSpacing: 1.5 },
-  compareText: { lineHeight: 26 },
-  rule: { height: 1, backgroundColor: theme.colors.divider, marginVertical: 6 },
-  closing: { fontFamily: theme.fonts.displayItalic, fontSize: 19, textAlign: 'center', marginTop: theme.spacing.sm },
-  actions: { flexDirection: 'row', gap: 14, marginTop: theme.spacing.xs },
-  homeBtn: { flex: 1, padding: 18, borderRadius: theme.radius.md, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.divider },
-  homeText: { fontFamily: theme.fonts.bodySemibold },
+  container: { padding: space[6], paddingTop: space[8] },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[4], backgroundColor: colors.cream, padding: space[6] },
+  centerSub: { fontFamily: typography.families.body, fontSize: 14, color: colors.stone, textAlign: 'center', lineHeight: 22 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  skip: { fontFamily: typography.families.bodyMedium, fontSize: 14, color: colors.stone },
+  plantWrap: { alignItems: 'center', marginTop: space[7] },
+  plantCircle: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.creamSunken, alignItems: 'center', justifyContent: 'center' },
+  caption: { fontFamily: typography.families.body, fontSize: 13, color: colors.stone, marginTop: space[5] },
+  headline: { fontFamily: typography.families.display, fontSize: 27, lineHeight: 35, color: colors.ink, marginTop: space[2] },
+  rule: { height: 1, backgroundColor: colors.hairline, marginVertical: space[5] },
+  label: { fontFamily: typography.families.bodySemibold, fontSize: 13, color: colors.ink, marginBottom: space[2], marginTop: space[4] },
+  area: { backgroundColor: colors.creamCard, borderWidth: 1, borderColor: colors.hairline, borderRadius: radius.sm, padding: space[3], minHeight: 100 },
+  areaInput: { fontFamily: typography.families.body, fontSize: 15, color: colors.ink, minHeight: 80, textAlignVertical: 'top', lineHeight: 24 },
+  revealBtn: { backgroundColor: colors.night, borderRadius: radius.sm, paddingVertical: space[4], alignItems: 'center', marginTop: space[6] },
+  revealText: { color: colors.cream, fontFamily: typography.families.bodySemibold, fontSize: 15 },
+  oldCard: { backgroundColor: colors.creamSunken, borderRadius: radius.sm, padding: space[4], marginTop: space[3] },
+  oldText: { fontFamily: typography.families.body, fontSize: 14, lineHeight: 23, color: colors.inkSoft },
+  ornament: { fontFamily: typography.families.display, fontSize: 24, color: colors.copper },
+  homeBtn: { paddingHorizontal: space[8], paddingVertical: space[4], borderWidth: 1, borderColor: colors.hairline, borderRadius: radius.sm },
+  homeText: { fontFamily: typography.families.bodySemibold, fontSize: 14, color: colors.ink },
 });
