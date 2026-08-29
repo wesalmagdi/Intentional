@@ -10,7 +10,7 @@ import { getDb } from '../lib/db';
 import { colors, typography, space, radius } from '@intentional/ui';
 import { Botanical, HorizonGlow } from '../components/Scenery';
 import { LinearGradient } from 'expo-linear-gradient';
-import guideSound from '../assets/breathguide.mp3';
+import guideSound from '../assets/breathguide.wav';
 
 function GuideSession({ onDone }: { onDone: () => void }) {
   const player = useAudioPlayer(guideSound);
