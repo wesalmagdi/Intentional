@@ -3,9 +3,11 @@ import { StyleSheet, View, ScrollView, Pressable, Text, TextInput, Animated } fr
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { LEARN_PROMPTS } from '@intentional/domain';
 import { colors, typography, space, radius } from '@intentional/ui';
 import { Botanical } from '../components/Scenery';
+import tickSound from '../assets/tick.wav';
 
 const TOPIC_POOLS: Record<string, string[]> = {
   General: ['Why do we keep souvenirs?', 'What makes a room feel calm?', 'Why do we hum?', 'What happened to the things we lost?', 'Why do queues form?', 'What is the oldest thing you own?'],
@@ -31,36 +33,43 @@ export default function NewChallengeScreen() {
   const [spinning, setSpinning] = useState(false);
   const [cycleDisplay, setCycleDisplay] = useState<string | null>(null);
   const cardScale = useState(() => new Animated.Value(1))[0];
+  const tickPlayer = useAudioPlayer(tickSound);
 
   const keys = mode === 'deep' ? deepKeys : topicKeys;
   const activeCat = mode === 'deep' ? deepCat : topicCat;
   const pool = (mode === 'deep' ? DEEP_POOLS[deepCat] : TOPIC_POOLS[topicCat]) ?? [];
 
+  const tick = () => {
+    try { tickPlayer.pause(); tickPlayer.seekTo(0); } catch {}
+    tickPlayer.volume = 0.5;
+    tickPlayer.play();
+  };
+
   function spin() {
     if (spinning || pool.length === 0) return;
     setSpinning(true);
     const options = pool.filter(p => p !== card);
-    const totalCycles = 28;
+    const totalCycles = 16;
     let cycle = 0;
 
     const doCycle = () => {
       const pick = options[Math.floor(Math.random() * options.length)];
       setCycleDisplay(pick);
+      tick();
       cycle++;
       if (cycle >= totalCycles) {
         const final = options[Math.floor(Math.random() * options.length)];
         setCycleDisplay(null);
         setCard(final);
         setSpinning(false);
-        // Landing bounce
         Animated.sequence([
-          Animated.timing(cardScale, { toValue: 1.04, duration: 120, useNativeDriver: true }),
-          Animated.timing(cardScale, { toValue: 1.0, duration: 180, useNativeDriver: true }),
+          Animated.timing(cardScale, { toValue: 1.04, duration: 100, useNativeDriver: true }),
+          Animated.timing(cardScale, { toValue: 1.0, duration: 150, useNativeDriver: true }),
         ]).start();
         return;
       }
-      // Slow down: exponential deceleration
-      const delay = 50 + Math.pow(cycle, 1.6) * 6;
+      // Steeper deceleration: starts fast (30ms), slows dramatically at the end
+      const delay = 25 + Math.pow(cycle, 1.8) * 8;
       setTimeout(doCycle, delay);
     };
     doCycle();
