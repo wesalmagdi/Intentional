@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   ornament: { fontFamily: typography.families.display, fontSize: 24, color: colors.copperSoft },
   keptTitle: { fontFamily: typography.families.display, fontSize: 32, color: colors.cream },
   guideWrap: { alignItems: 'center', gap: space[3], marginVertical: space[6] },
-  breathCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.creamSunken, borderWidth: 1.5, borderColor: colors.copper },
+  breathCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.creamSunken, borderWidth: 1.5, borderColor: colors.copper, margin: 26 },
   breathLabel: { fontFamily: typography.families.displayItalic, fontSize: 15, color: colors.stone },
   guideTimer: { fontFamily: typography.families.body, fontSize: 12, color: colors.stone, letterSpacing: 2 },
   container: { padding: space[6], gap: space[4] },
