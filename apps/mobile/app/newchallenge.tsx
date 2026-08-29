@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View, ScrollView, Pressable, Text, TextInput } from 'react-native';
+import { StyleSheet, View, ScrollView, Pressable, Text, TextInput, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,21 +28,50 @@ export default function NewChallengeScreen() {
   const [deepCat, setDeepCat] = useState(deepKeys[0]);
   const [card, setCard] = useState<string | null>(null);
   const [own, setOwn] = useState('');
+  const [spinning, setSpinning] = useState(false);
+  const [cycleDisplay, setCycleDisplay] = useState<string | null>(null);
+  const cardScale = useState(() => new Animated.Value(1))[0];
 
   const keys = mode === 'deep' ? deepKeys : topicKeys;
   const activeCat = mode === 'deep' ? deepCat : topicCat;
   const pool = (mode === 'deep' ? DEEP_POOLS[deepCat] : TOPIC_POOLS[topicCat]) ?? [];
 
   function spin() {
+    if (spinning || pool.length === 0) return;
+    setSpinning(true);
     const options = pool.filter(p => p !== card);
-    if (options.length === 0) return;
-    setCard(options[Math.floor(Math.random() * options.length)]);
+    const totalCycles = 28;
+    let cycle = 0;
+
+    const doCycle = () => {
+      const pick = options[Math.floor(Math.random() * options.length)];
+      setCycleDisplay(pick);
+      cycle++;
+      if (cycle >= totalCycles) {
+        const final = options[Math.floor(Math.random() * options.length)];
+        setCycleDisplay(null);
+        setCard(final);
+        setSpinning(false);
+        // Landing bounce
+        Animated.sequence([
+          Animated.timing(cardScale, { toValue: 1.04, duration: 120, useNativeDriver: true }),
+          Animated.timing(cardScale, { toValue: 1.0, duration: 180, useNativeDriver: true }),
+        ]).start();
+        return;
+      }
+      // Slow down: exponential deceleration
+      const delay = 50 + Math.pow(cycle, 1.6) * 6;
+      setTimeout(doCycle, delay);
+    };
+    doCycle();
   }
 
   function begin(prompt: string, category: string) {
     if (prompt.trim().length === 0) return;
     router.push({ pathname: '/challenge', params: { prompt: prompt.trim(), category } });
   }
+
+  const displayed = spinning ? cycleDisplay : (card ?? 'Ready.');
 
   return (
     <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
@@ -52,8 +81,8 @@ export default function NewChallengeScreen() {
       <Text style={styles.headline}>What pulls you?</Text>
 
       <View style={styles.tabs}>
-        {([['topics', '✦ Topics'], ['deep', '🔍 Deep'], ['own', '✎ My own']] as [Mode, string][]).map(([m, label]) => (
-          <Pressable key={m} style={[styles.tab, mode === m && styles.tabActive]} onPress={() => { setMode(m); setCard(null); }}>
+        {([['topics', 'Topics'], ['deep', 'Deep'], ['own', 'My own']] as [Mode, string][]).map(([m, label]) => (
+          <Pressable key={m} style={[styles.tab, mode === m && styles.tabActive]} onPress={() => { setMode(m); setCard(null); setSpinning(false); }}>
             <Text style={[styles.tabText, mode === m && styles.tabTextActive]}>{label}</Text>
           </Pressable>
         ))}
@@ -74,17 +103,17 @@ export default function NewChallengeScreen() {
             ))}
           </ScrollView>
 
-          <View style={styles.card}>
+          <Animated.View style={[styles.card, { transform: [{ scale: cardScale }] }]}>
             <Text style={styles.cardEyebrow}>{activeCat.toUpperCase()}</Text>
-            <Text style={styles.cardText}>{card ?? 'Ready.'}</Text>
-          </View>
+            <Text style={[styles.cardText, spinning && styles.cardTextSpin]} numberOfLines={4}>{displayed}</Text>
+          </Animated.View>
 
           <View style={styles.btnRow}>
-            <Pressable style={styles.spinBtn} onPress={spin}>
-              <Feather name="shuffle" size={15} color={colors.ink} />
-              <Text style={styles.spinText}>Spin</Text>
+            <Pressable style={[styles.spinBtn, spinning && styles.spinBtnDisabled]} disabled={spinning || pool.length === 0} onPress={spin}>
+              <Feather name="refresh-cw" size={15} color={colors.ink} />
+              <Text style={styles.spinText}>{spinning ? 'Spinning' : 'Spin'}</Text>
             </Pressable>
-            <Pressable style={[styles.beginBtn, !card && styles.beginDisabled]} disabled={!card}
+            <Pressable style={[styles.beginBtn, (!card || spinning) && styles.beginDisabled]} disabled={!card || spinning}
               onPress={() => begin(card ?? '', activeCat)}>
               <Text style={styles.beginText}>Begin 10 minutes</Text>
             </Pressable>
@@ -122,11 +151,13 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.ink, borderColor: colors.ink },
   chipText: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.ink },
   chipTextActive: { color: colors.cream },
-  card: { backgroundColor: colors.creamCard, borderWidth: 1, borderColor: colors.hairline, borderRadius: radius.md, padding: space[6], minHeight: 150, alignItems: 'center', justifyContent: 'center', gap: space[3] },
+  card: { backgroundColor: colors.creamCard, borderWidth: 1, borderColor: colors.hairline, borderRadius: radius.md, padding: space[6], minHeight: 160, alignItems: 'center', justifyContent: 'center', gap: space[3] },
   cardEyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 10, letterSpacing: 1.5, color: colors.copper },
   cardText: { fontFamily: typography.families.displayItalic, fontSize: 22, lineHeight: 30, color: colors.ink, textAlign: 'center' },
+  cardTextSpin: { opacity: 0.75 },
   btnRow: { flexDirection: 'row', gap: space[3] },
   spinBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space[2], backgroundColor: colors.creamSunken, borderRadius: radius.sm, paddingHorizontal: space[5], paddingVertical: space[4] },
+  spinBtnDisabled: { opacity: 0.5 },
   spinText: { fontFamily: typography.families.bodySemibold, fontSize: 14, color: colors.ink },
   beginBtn: { flex: 1, backgroundColor: colors.copperDeep, borderRadius: radius.sm, paddingVertical: space[4], alignItems: 'center' },
   beginSolo: { marginTop: space[2] },
