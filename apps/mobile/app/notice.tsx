@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, TextInput, Animated, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useCountdown } from '../lib/timer';
@@ -100,6 +101,7 @@ function BreathCircle({ onDone }: { onDone: () => void }) {
 }
 
 export default function NoticeScreen() {
+  const insets = useSafeAreaInsets();
   const prompt = promptForDay(NOTICE_PROMPTS, new Date());
   const { remainingMs, isDone } = useCountdown(60_000);
   const [phase, setPhase] = useState<'arrive' | 'wait' | 'write' | 'kept'>('arrive');
@@ -138,7 +140,7 @@ export default function NoticeScreen() {
   }
 
   if (phase === 'kept') return (
-    <LinearGradient colors={[colors.night, colors.nightSoft]} style={styles.screen}>
+    <LinearGradient colors={[colors.night, colors.nightSoft]} style={[styles.screen, { paddingTop: insets.top }]}>
       <HorizonGlow />
       <View style={styles.center}>
         <Text style={styles.ornament}>❦</Text>
@@ -149,7 +151,7 @@ export default function NoticeScreen() {
   );
 
   if (phase === 'write') return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
       <Botanical />
       <Pressable onPress={() => void handleLeave()}><Text style={styles.back}>← Home</Text></Pressable>
       <Text style={styles.eyebrow}>NOTICE</Text>
@@ -162,7 +164,7 @@ export default function NoticeScreen() {
   );
 
   if (phase === 'arrive') return (
-    <View style={[styles.screen, { backgroundColor: colors.cream }]}>
+    <View style={[styles.screen, { backgroundColor: colors.cream, paddingTop: insets.top + space[6] }]}>
       <Botanical />
       <View style={styles.top}><Pressable onPress={() => void handleLeave()}><Text style={styles.back}>← Home</Text></Pressable></View>
       <View style={styles.center}>
@@ -176,7 +178,7 @@ export default function NoticeScreen() {
 
   const seconds = Math.ceil(remainingMs / 1000);
   return (
-    <View style={[styles.screen, { backgroundColor: colors.cream }]}>
+    <View style={[styles.screen, { backgroundColor: colors.cream, paddingTop: insets.top + space[6] }]}>
       <Botanical />
       <View style={styles.top}><Pressable onPress={() => void handleLeave()}><Text style={styles.back}>← Home</Text></Pressable></View>
       <View style={styles.center}>
@@ -191,10 +193,10 @@ export default function NoticeScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, padding: space[6], paddingTop: space[8] },
+  screen: { flex: 1, padding: space[6], paddingTop: 0 },
   top: { alignItems: 'flex-start' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[4] },
-  back: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.stone },
+  back: { fontFamily: typography.families.bodySemibold, fontSize: 15, color: colors.stone },
   eyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.copper },
   headline: { fontFamily: typography.families.displayItalic, fontSize: 28, lineHeight: 36, color: colors.ink, textAlign: 'center' },
   centerSub: { fontFamily: typography.families.body, fontSize: 14, color: colors.stone, textAlign: 'center', lineHeight: 22 },
@@ -205,7 +207,7 @@ const styles = StyleSheet.create({
   breathWrap: { alignItems: 'center', gap: space[4], marginVertical: space[6] },
   breathCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.creamSunken, borderWidth: 1.5, borderColor: colors.copper },
   breathLabel: { fontFamily: typography.families.displayItalic, fontSize: 15, color: colors.stone },
-  container: { padding: space[6], paddingTop: space[8], gap: space[4] },
+  container: { padding: space[6], paddingTop: 0, gap: space[4] },
   area: { backgroundColor: colors.creamCard, borderWidth: 1, borderColor: colors.hairline, borderRadius: radius.sm, padding: space[3], minHeight: 110 },
   areaInput: { fontFamily: typography.families.body, fontSize: 16, color: colors.ink, minHeight: 90, textAlignVertical: 'top', lineHeight: 26 },
   keepBtn: { backgroundColor: colors.copperDeep, padding: 17, borderRadius: radius.sm, alignItems: 'center' },

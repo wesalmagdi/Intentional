@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View, Pressable, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { getReadings } from '@intentional/database';
@@ -9,12 +10,13 @@ import { colors, typography, space, radius } from '@intentional/ui';
 import { Botanical } from '../components/Scenery';
 
 export default function ReadingScreen() {
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState<Reading[]>([]);
 
   useEffect(() => { void (async () => setItems(await getReadings(await getDb())))(); }, []);
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
       <Botanical />
       <Pressable onPress={() => router.push('/')}><Text style={styles.back}>← Home</Text></Pressable>
       <Text style={styles.eyebrow}>READING ROOM</Text>
@@ -40,8 +42,8 @@ export default function ReadingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space[6], paddingTop: space[8], gap: space[4] },
-  back: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.stone },
+  container: { padding: space[6], paddingTop: 0, gap: space[4] },
+  back: { fontFamily: typography.families.bodySemibold, fontSize: 15, color: colors.stone },
   eyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.copper, marginTop: space[4] },
   headline: { fontFamily: typography.families.displayItalic, fontSize: 28, color: colors.ink },
   sub: { fontFamily: typography.families.body, fontSize: 14, color: colors.stone },

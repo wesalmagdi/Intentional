@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, TextInput, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { CHOOSE_PROMPTS } from '@intentional/domain';
@@ -9,6 +10,7 @@ import { colors, typography, space, radius } from '@intentional/ui';
 import { Botanical } from '../components/Scenery';
 
 export default function ChooseScreen() {
+  const insets = useSafeAreaInsets();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [kept, setKept] = useState(false);
@@ -34,7 +36,7 @@ export default function ChooseScreen() {
   );
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
       <Botanical />
       <Pressable onPress={() => router.push('/')}><Text style={styles.back}>← Home</Text></Pressable>
       <Text style={styles.eyebrow}>CHOOSE</Text>
@@ -67,11 +69,11 @@ export default function ChooseScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space[6], paddingTop: space[8], gap: space[4] },
+  container: { padding: space[6], paddingTop: 0, gap: space[4] },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[4], backgroundColor: colors.cream },
   ornament: { fontFamily: typography.families.display, fontSize: 24, color: colors.copper },
   keptTitle: { fontFamily: typography.families.display, fontSize: 32, color: colors.ink },
-  back: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.stone },
+  back: { fontFamily: typography.families.bodySemibold, fontSize: 15, color: colors.stone },
   eyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.copper, marginTop: space[4] },
   headline: { fontFamily: typography.families.displayItalic, fontSize: 28, lineHeight: 36, color: colors.ink, marginBottom: space[3] },
   card: { backgroundColor: colors.creamCard, borderWidth: 1, borderColor: colors.hairline, borderRadius: radius.md, overflow: 'hidden' },

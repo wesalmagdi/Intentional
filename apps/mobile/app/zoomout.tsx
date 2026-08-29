@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, TextInput, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -14,6 +15,7 @@ import { HorizonGlow } from '../components/Scenery';
 function snippet(t: string): string { return t.length > 140 ? `${t.slice(0, 140)}…` : t; }
 
 export default function ZoomOutScreen() {
+  const insets = useSafeAreaInsets();
   const [subject, setSubject] = useState<Discovery | null | undefined>(undefined);
   const [echo, setEcho] = useState<ResonantMatch | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -64,9 +66,9 @@ export default function ZoomOutScreen() {
   );
 
   return (
-    <LinearGradient colors={[colors.night, colors.nightSoft]} style={styles.gradient}>
+    <LinearGradient colors={[colors.night, colors.nightSoft]} style={[styles.gradient, { paddingTop: insets.top }]}>
       <HorizonGlow />
-      <ScrollView contentContainerStyle={styles.scroll} style={{ zIndex: 1 }}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + space[4] }]} style={{ zIndex: 1 }}>
         <Pressable onPress={() => router.push('/')}><Text style={styles.back}>← Home</Text></Pressable>
         <Text style={styles.eyebrow}>ZOOM OUT</Text>
         <Text style={styles.subjectLabel}>RECENTLY KEPT</Text>
@@ -109,7 +111,7 @@ export default function ZoomOutScreen() {
 
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
-  scroll: { padding: space[6], paddingTop: space[8], gap: space[4] },
+  scroll: { padding: space[6], paddingTop: 0, gap: space[4] },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[4], padding: space[6] },
   centerSub: { fontFamily: typography.families.body, fontSize: 14, color: colors.cream, opacity: 0.6, textAlign: 'center', lineHeight: 22 },
   keptTitle: { fontFamily: typography.families.display, fontSize: 30, color: colors.cream, textAlign: 'center' },

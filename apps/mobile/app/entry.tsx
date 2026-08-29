@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Pressable, TextInput, View, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { getJournalEntry, saveJournalEntry } from '@intentional/database';
@@ -9,6 +10,7 @@ import { colors, typography, space, radius } from '@intentional/ui';
 import { Botanical } from '../components/Scenery';
 
 export default function EntryScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [entry, setEntry] = useState<JournalEntry | null>(null);
   const [editing, setEditing] = useState(false);
@@ -35,7 +37,7 @@ export default function EntryScreen() {
   if (!entry) return <View style={{ flex: 1, backgroundColor: colors.cream }} />;
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
       <Botanical />
       <View style={styles.header}>
         <Pressable onPress={() => router.push('/journal')}><Text style={styles.back}>← Journal</Text></Pressable>
@@ -63,9 +65,9 @@ export default function EntryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space[6], paddingTop: space[8], gap: space[4] },
+  container: { padding: space[6], paddingTop: 0, gap: space[4] },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  back: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.stone },
+  back: { fontFamily: typography.families.bodySemibold, fontSize: 15, color: colors.stone },
   date: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.copper },
   prompt: { fontFamily: typography.families.displayItalic, fontSize: 20, lineHeight: 28, color: colors.ink },
   body: { fontFamily: typography.families.body, fontSize: 17, lineHeight: 29, color: colors.inkSoft, marginTop: space[2] },

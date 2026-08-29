@@ -1,4 +1,5 @@
 import { StyleSheet, View, Pressable, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -13,6 +14,7 @@ const OPTIONS = [
 ];
 
 export default function SavedScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   async function schedule(days: number) {
@@ -24,7 +26,7 @@ export default function SavedScreen() {
   }
 
   return (
-    <LinearGradient colors={[colors.night, colors.nightSoft]} style={styles.gradient}>
+    <LinearGradient colors={[colors.night, colors.nightSoft]} style={[styles.gradient, { paddingTop: insets.top }]}>
       <HorizonGlow />
       <View style={styles.checkWrap}>
         <View style={styles.checkRing}><Feather name="check" size={30} color={colors.copperSoft} /></View>

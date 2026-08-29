@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -21,6 +22,7 @@ const R = 108;
 const CIRC = 2 * Math.PI * R;
 
 export default function ChallengeScreen() {
+  const insets = useSafeAreaInsets();
   const { prompt, intention, category } = useLocalSearchParams();
   const { remainingMs, isPaused, pause, resume, isDone } = useCountdown(TOTAL);
   const [soundId, setSoundId] = useState<SoundId>('focus');
@@ -58,7 +60,7 @@ export default function ChallengeScreen() {
   }
 
   return (
-    <LinearGradient colors={[colors.night, colors.nightSoft]} style={styles.gradient}>
+    <LinearGradient colors={[colors.night, colors.nightSoft]} style={[styles.gradient, { paddingTop: insets.top }]}>
       <View style={styles.topRow}>
         <Pressable onPress={() => router.push('/')} hitSlop={12}><Feather name="x" size={22} color={colors.cream} /></Pressable>
         <Pressable onPress={() => setSoundOn(s => !s)} hitSlop={12}>
@@ -98,7 +100,7 @@ export default function ChallengeScreen() {
 
 const styles = StyleSheet.create({
   gradient: { flex: 1, padding: space[6] },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: space[8] },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: space[4] },
   eyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 2, color: colors.copperSoft, textAlign: 'center', marginTop: space[6] },
   question: { fontFamily: typography.families.display, fontSize: 27, lineHeight: 36, color: colors.cream, textAlign: 'center', marginTop: space[3], paddingHorizontal: space[4] },
   ringWrap: { alignSelf: 'center', marginTop: space[7], marginBottom: space[7] },

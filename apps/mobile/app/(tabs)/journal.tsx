@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, TextInput, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { randomJournalPrompt, type JournalEntry } from '@intentional/domain';
@@ -8,6 +9,7 @@ import { getDb } from '../../lib/db';
 import { colors, typography, space, radius } from '@intentional/ui';
 
 export default function JournalScreen() {
+  const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<'choice' | 'write'>('choice');
   const [prompt, setPrompt] = useState<string | null>(null);
   const [text, setText] = useState('');
@@ -37,7 +39,7 @@ export default function JournalScreen() {
   );
 
   if (mode === 'choice') return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
       <Text style={styles.title}>A place for thoughts that{"\n"}don't need anywhere else to go.</Text>
       <Pressable style={styles.primaryBtn} onPress={() => setMode('write')}><Text style={styles.primaryText}>Write something</Text></Pressable>
       <Pressable style={styles.ghostBtn} onPress={() => { setPrompt(randomJournalPrompt()); setMode('write'); }}>
@@ -61,7 +63,7 @@ export default function JournalScreen() {
   );
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
       {prompt ? <Text style={styles.prompt}>{prompt}</Text> : <Text style={styles.promptMuted}>What's on your mind?</Text>}
       <TextInput
         style={styles.input} multiline autoFocus placeholder="Start writing..." placeholderTextColor={colors.stone}
@@ -76,7 +78,7 @@ export default function JournalScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space[6], paddingTop: space[9], gap: space[5] },
+  container: { padding: space[6], paddingTop: 0, gap: space[5] },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[4], backgroundColor: colors.cream },
   savedOrnament: { fontFamily: typography.families.display, fontSize: 24, color: colors.copper },
   savedTitle: { fontFamily: typography.families.display, fontSize: 32, color: colors.ink },

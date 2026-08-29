@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Pressable, View, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FS from 'expo-file-system/legacy';
@@ -16,6 +17,7 @@ import { Botanical } from '../components/Scenery';
 const FileSystem = FS as any;
 
 export default function DataScreen() {
+  const insets = useSafeAreaInsets();
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -69,7 +71,7 @@ export default function DataScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
       <Botanical />
       <Pressable onPress={() => router.push('/')}><Text style={styles.back}>← Home</Text></Pressable>
       <Text style={styles.eyebrow}>YOUR DATA</Text>
@@ -94,8 +96,8 @@ export default function DataScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space[6], paddingTop: space[8], gap: space[4] },
-  back: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.stone },
+  container: { padding: space[6], paddingTop: 0, gap: space[4] },
+  back: { fontFamily: typography.families.bodySemibold, fontSize: 15, color: colors.stone },
   eyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.copper, marginTop: space[4] },
   headline: { fontFamily: typography.families.displayItalic, fontSize: 30, lineHeight: 38, color: colors.ink },
   sub: { fontFamily: typography.families.body, fontSize: 14, lineHeight: 22, color: colors.stone, marginBottom: space[3] },

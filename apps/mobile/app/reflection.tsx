@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, Text, TextInput } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { saveDiscovery, getDiscoveries } from '@intentional/database';
@@ -7,6 +8,7 @@ import { getDb } from '../lib/db';
 import { BottomSheet, colors, typography, space, radius } from '@intentional/ui';
 
 export default function ReflectionScreen() {
+  const insets = useSafeAreaInsets();
   const { prompt, intention, category } = useLocalSearchParams();
   const [learned, setLearned] = useState('');
   const [surprised, setSurprised] = useState('');
@@ -40,7 +42,7 @@ export default function ReflectionScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}><Feather name="chevron-left" size={22} color={colors.ink} /></Pressable>
         <Pressable onPress={() => void handleSave()}><Text style={styles.save}>Save</Text></Pressable>
@@ -98,7 +100,7 @@ export default function ReflectionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space[6], paddingTop: space[8] },
+  container: { padding: space[6], paddingTop: 0 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   save: { fontFamily: typography.families.bodySemibold, fontSize: 15, color: colors.copper },
   headline: { fontFamily: typography.families.display, fontSize: 30, lineHeight: 38, color: colors.ink, marginTop: space[5] },

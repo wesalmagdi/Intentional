@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, Text, TextInput } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { getDiscoveries } from '@intentional/database';
@@ -9,6 +10,7 @@ import type { Discovery } from '@intentional/domain';
 import { colors, typography, space, radius } from '@intentional/ui';
 
 export default function RevisitScreen() {
+  const insets = useSafeAreaInsets();
   const [current, setCurrent] = useState<Discovery | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [memory, setMemory] = useState('');
@@ -39,7 +41,7 @@ export default function RevisitScreen() {
   const original = Object.values(current.findings).filter(t => t && t.trim().length > 0).join('\n\n');
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}><Feather name="chevron-left" size={22} color={colors.ink} /></Pressable>
         {!revealed && <Pressable onPress={() => router.push('/')}><Text style={styles.skip}>Skip</Text></Pressable>}
@@ -78,7 +80,7 @@ export default function RevisitScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space[6], paddingTop: space[8] },
+  container: { padding: space[6], paddingTop: 0 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[4], backgroundColor: colors.cream, padding: space[6] },
   centerSub: { fontFamily: typography.families.body, fontSize: 14, color: colors.stone, textAlign: 'center', lineHeight: 22 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

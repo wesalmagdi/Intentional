@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, View, ScrollView, Pressable, Text, TextInput } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { LEARN_PROMPTS } from '@intentional/domain';
@@ -7,6 +8,7 @@ import { colors, typography, space, radius } from '@intentional/ui';
 import { Botanical } from '../components/Scenery';
 
 export default function NewChallengeScreen() {
+  const insets = useSafeAreaInsets();
   const [question, setQuestion] = useState('');
 
   function surprise() {
@@ -21,7 +23,7 @@ export default function NewChallengeScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
       <Botanical />
       <Pressable onPress={() => router.back()} hitSlop={12}><Feather name="x" size={22} color={colors.ink} /></Pressable>
 
@@ -56,7 +58,7 @@ export default function NewChallengeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space[6], paddingTop: space[8], gap: space[5] },
+  container: { padding: space[6], paddingTop: 0, gap: space[5] },
   headline: { fontFamily: typography.families.display, fontSize: 32, lineHeight: 40, color: colors.ink, marginTop: space[6] },
   sub: { fontFamily: typography.families.body, fontSize: 14, color: colors.copper, marginTop: -space[3] },
   inputCard: { backgroundColor: colors.creamCard, borderRadius: radius.md, padding: space[4], borderWidth: 1, borderColor: colors.hairline, minHeight: 120 },

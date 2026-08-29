@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View, Pressable, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { getDiscoveries, getPreference } from '@intentional/database';
@@ -15,6 +16,7 @@ const LABELS: Record<string, string> = {
 };
 
 export default function DiscoveryScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [item, setItem] = useState<Discovery | null>(null);
   const [nextAt, setNextAt] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export default function DiscoveryScreen() {
   if (!item) return <View style={{ flex: 1, backgroundColor: colors.cream }} />;
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}><Feather name="chevron-left" size={22} color={colors.ink} /></Pressable>
         <Pressable onPress={() => router.push('/library')} hitSlop={12}><Feather name="more-horizontal" size={20} color={colors.ink} /></Pressable>
@@ -66,7 +68,7 @@ export default function DiscoveryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space[6], paddingTop: space[8] },
+  container: { padding: space[6], paddingTop: 0 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   title: { fontFamily: typography.families.display, fontSize: 27, lineHeight: 35, color: colors.ink, marginTop: space[5] },
   meta: { fontFamily: typography.families.body, fontSize: 12, color: colors.stone, marginTop: space[2] },

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, ScrollView, View, Pressable, Text, TextInput } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { getDiscoveries } from '@intentional/database';
@@ -8,6 +9,7 @@ import type { Discovery } from '@intentional/domain';
 import { colors, typography, space, radius } from '@intentional/ui';
 
 export default function LearnLibraryScreen() {
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState<Discovery[]>([]);
   const [query, setQuery] = useState('');
 
@@ -27,7 +29,7 @@ export default function LearnLibraryScreen() {
     .slice(0, 6);
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
       <View style={styles.header}>
         <Text style={styles.title}>Learn</Text>
         <Pressable style={styles.exploreBtn} onPress={() => router.push('/newchallenge')}>
@@ -72,7 +74,7 @@ export default function LearnLibraryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space[6], paddingTop: space[9] },
+  container: { padding: space[6], paddingTop: 0 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space[5] },
   title: { fontFamily: typography.families.display, fontSize: 30, color: colors.ink },
   exploreBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.copperDeep, paddingHorizontal: space[4], paddingVertical: space[2] + 2, borderRadius: radius.pill },

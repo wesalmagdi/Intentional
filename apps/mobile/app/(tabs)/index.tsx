@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View, ScrollView, Pressable, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -27,6 +28,7 @@ function greeting(): string {
 }
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const [memory, setMemory] = useState<Discovery | null>(null);
   const [activeSession, setActiveSession] = useState<string>('');
 
@@ -44,9 +46,9 @@ export default function HomeScreen() {
   }
 
   return (
-    <LinearGradient colors={[colors.night, colors.nightSoft]} style={styles.gradient}>
+    <LinearGradient colors={[colors.night, colors.nightSoft]} style={[styles.gradient, { paddingTop: insets.top }]}>
       <MountainDusk />
-      <ScrollView contentContainerStyle={styles.container} style={styles.above}>
+      <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={styles.above}>
         <View style={styles.topRow}>
           <Text style={styles.greeting}>{greeting()}</Text>
           <View style={styles.avatar}><Feather name="user" size={16} color={colors.cream} /></View>
@@ -78,7 +80,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {memory !== null && (
-        <Pressable style={styles.memoryBar} onPress={() => router.push('/revisit')}>
+        <Pressable style={[styles.memoryBar, { paddingBottom: insets.bottom + space[4] }]} onPress={() => router.push('/revisit')}>
           <Text style={styles.memoryText} numberOfLines={2}>You wanted to remember something.</Text>
           <View style={styles.memoryCta}>
             <Text style={styles.memoryCtaText}>Revisit</Text>
@@ -93,7 +95,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
   above: { zIndex: 1 },
-  container: { padding: space[6], paddingTop: space[9] },
+  container: { padding: space[6], paddingTop: 0 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space[5] },
   greeting: { fontFamily: typography.families.displayItalic, fontSize: 17, color: colors.cream, opacity: 0.75 },
   avatar: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: colors.hairlineDark, alignItems: 'center', justifyContent: 'center' },

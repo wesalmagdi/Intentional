@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Pressable, View, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { getPreference, setPreference } from '@intentional/database';
@@ -16,6 +17,7 @@ export const SOUND_OPTIONS = [
 export type SoundId = typeof SOUND_OPTIONS[number]['id'];
 
 export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState<SoundId>('focus');
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
       <Botanical />
       <Pressable onPress={() => router.push('/')}><Text style={styles.back}>← Home</Text></Pressable>
       <Text style={styles.eyebrow}>SETTINGS</Text>
@@ -52,8 +54,8 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space[6], paddingTop: space[8], gap: space[4] },
-  back: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.stone },
+  container: { padding: space[6], paddingTop: 0, gap: space[4] },
+  back: { fontFamily: typography.families.bodySemibold, fontSize: 15, color: colors.stone },
   eyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.copper, marginTop: space[4] },
   headline: { fontFamily: typography.families.displayItalic, fontSize: 28, color: colors.ink },
   sub: { fontFamily: typography.families.body, fontSize: 14, color: colors.stone, marginBottom: space[3] },

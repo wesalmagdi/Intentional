@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View, Pressable, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { keyConcepts, questionSeeds, type ResonantMatch } from '@intentional/resonance';
 import { getReading } from '@intentional/database';
@@ -12,6 +13,7 @@ import { Botanical } from '../components/Scenery';
 function snippet(t: string): string { return t.length > 140 ? `${t.slice(0, 140)}…` : t; }
 
 export default function ReadingViewScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [reading, setReading] = useState<Reading | null>(null);
   const [echo, setEcho] = useState<ResonantMatch | null>(null);
@@ -31,7 +33,7 @@ export default function ReadingViewScreen() {
   const seeds = questionSeeds(reading.body, reading.title, 3);
 
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
       <Botanical />
       <Pressable onPress={() => router.push('/reading')}><Text style={styles.back}>← Reading Room</Text></Pressable>
       <Text style={styles.eyebrow}>READING ROOM</Text>
@@ -68,8 +70,8 @@ export default function ReadingViewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space[6], paddingTop: space[8], gap: space[4] },
-  back: { fontFamily: typography.families.bodyMedium, fontSize: 13, color: colors.stone },
+  container: { padding: space[6], paddingTop: 0, gap: space[4] },
+  back: { fontFamily: typography.families.bodySemibold, fontSize: 15, color: colors.stone },
   eyebrow: { fontFamily: typography.families.bodySemibold, fontSize: 11, letterSpacing: 1.5, color: colors.copper, marginTop: space[4] },
   headline: { fontFamily: typography.families.displayItalic, fontSize: 27, lineHeight: 35, color: colors.ink },
   meta: { fontFamily: typography.families.body, fontSize: 12, color: colors.stone },

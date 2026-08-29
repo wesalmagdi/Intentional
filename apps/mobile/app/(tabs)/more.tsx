@@ -1,4 +1,5 @@
 import { StyleSheet, ScrollView, View, Pressable, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors, typography, space } from '@intentional/ui';
@@ -11,8 +12,9 @@ const ROWS = [
 ];
 
 export default function MoreScreen() {
+  const insets = useSafeAreaInsets();
   return (
-    <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.cream }}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + space[6] }]} style={{ backgroundColor: colors.cream }}>
       <Text style={styles.title}>More</Text>
       <View style={styles.list}>
         {ROWS.map((r, i) => (
@@ -31,7 +33,7 @@ export default function MoreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space[6], paddingTop: space[9] },
+  container: { padding: space[6], paddingTop: 0 },
   title: { fontFamily: typography.families.display, fontSize: 30, color: colors.ink, marginBottom: space[6] },
   list: { backgroundColor: colors.creamCard, borderRadius: 16, paddingHorizontal: space[4] },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: space[4], gap: space[3] },
