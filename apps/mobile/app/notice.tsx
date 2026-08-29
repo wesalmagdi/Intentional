@@ -27,13 +27,17 @@ function GuideSession({ onDone }: { onDone: () => void }) {
       const cur = (player as any).currentTime ?? 0;
       const dur = (player as any).duration ?? 600;
       setRemaining(Math.max(0, Math.ceil(dur - cur)));
-      const m = cur % 14;
-      if (m < 4) { setLabel('Breathe in.'); scale.setValue(1 + 0.4 * (m / 4)); }
-      else if (m < 8) { setLabel('Hold.'); scale.setValue(1.4); }
-      else { setLabel('Let it go.'); scale.setValue(1.4 - 0.4 * ((m - 8) / 6)); }
+      if (cur < 8) { setLabel('Settle in.'); scale.setValue(1); }
+      else if (cur >= 589) { setLabel('Well done.'); scale.setValue(1); }
+      else {
+        const m = (cur - 8) % 14;
+        if (m < 4) { setLabel('Breathe in.'); scale.setValue(1 + 0.4 * (m / 4)); }
+        else if (m < 8) { setLabel('Hold.'); scale.setValue(1.4); }
+        else { setLabel('Let it go.'); scale.setValue(1.4 - 0.4 * ((m - 8) / 6)); }
+      }
       if (dur > 1 && cur >= dur - 0.5) { clearInterval(t); onDone(); }
     }, 100);
-    return () => { alive = false; clearInterval(t); player.pause(); };
+    return () => { alive = false; clearInterval(t); try { player.pause(); } catch {} };
   }, []);
 
   const mm = Math.floor(remaining / 60);
