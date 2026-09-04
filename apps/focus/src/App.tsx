@@ -94,7 +94,7 @@ function HeroTree({ sp, growth, size = 150, dead }: { sp: string; growth: number
   const top = 92 - 52 * g;
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" className={dead ? 'treeDead' : 'treeSway'}>
-      <ellipse cx={50} cy={93} rx={24} ry={4} fill="rgba(34,30,25,0.08)" />
+      <ellipse cx={50} cy={93} rx={24} ry={4} fill="rgba(0,0,0,0.25)" />
       <path d={`M48 92 C48 ${92 - 30 * g} 49 ${top + 8} 50 ${top} L52 ${top} C52 ${top + 8} 52 ${92 - 30 * g} 52 92 Z`} fill={dead ? '#8B8377' : '#7A6652'} />
       {s.id === 'pine' ? (
         <g>
@@ -120,26 +120,374 @@ function HeroTree({ sp, growth, size = 150, dead }: { sp: string; growth: number
   );
 }
 
-function FocusView() {
-  const [lists, setLists] = useStored<List[]>('it.lists', [{ id: 'inbox', name: 'Inbox', color: COLORS[0] }]);
-  const [tasks, setTasks] = useStored<Task[]>('it.tasks', []);
-  const [trees, setTrees] = useStored<Tree[]>('it.trees', []);
-  const [coins, setCoins] = useStored<number>('it.coins', 0);
+// ----- Codeforces-style progress -----
+type Prog = { at: number; rating: number; delta: number; dead: boolean; minutes: number; species: string };
+const RANKS: [number, string, string][] = [
+  [0, 'Seed', '#8B8377'], [100, 'Sprout', '#8FCB8B'], [250, 'Sapling', '#5FA46B'],
+  [500, 'Grove', '#6BA8C9'], [900, 'Forest Keeper', '#9A7FD1'], [1400, 'Elderwood', '#E3A95C'], [2000, 'Ancient Forest', '#E08573'],
+];
+function rankOf(r: number): [number, string, string] { let cur = RANKS[0]; for (const rk of RANKS) if (r >= rk[0]) cur = rk; return cur; }
+function computeProg(trees: Tree[]) {
+  const sorted = [...trees].sort((a, b) => a.plantedAt - b.plantedAt);
+  let r = 0, max = 0;
+  const hist: Prog[] = sorted.map(t => {
+    const delta = t.dead ? -Math.max(5, Math.round(t.minutes / 6)) : Math.round(t.minutes / 5);
+    r = Math.max(0, r + delta);
+    max = Math.max(max, r);
+    return { at: t.plantedAt, rating: r, delta, dead: t.dead, minutes: t.minutes, species: t.species };
+  });
+  return { hist, current: r, max };
+}
+
+function RatingGraph({ hist }: { hist: Prog[] }) {
+  if (hist.length < 2) return <p className="hint">Grow a few trees to draw your rating curve.</p>;
+  const W = 560, H = 180, P = 22;
+  const rs = hist.map(h => h.rating);
+  const min = Math.min(...rs), max = Math.max(...rs);
+  const x = (i: number) => P + (i * (W - 2 * P)) / (hist.length - 1);
+  const y = (v: number) => (max === min ? H / 2 : H - P - ((v - min) * (H - 2 * P)) / (max - min));
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="rGraph">
+      {[0.25, 0.5, 0.75].map(f => <line key={f} x1={P} x2={W - P} y1={P + f * (H - 2 * P)} y2={P + f * (H - 2 * P)} stroke="rgba(255,255,255,0.06)" />)}
+      <polyline points={hist.map((h, i) => `${x(i)},${y(h.rating)}`).join(' ')} fill="none" stroke="rgba(227,169,92,0.75)" strokeWidth={2} />
+      {hist.map((h, i) => <circle key={i} cx={x(i)} cy={y(h.rating)} r={4} fill={rankOf(h.rating)[2]} stroke="#0B120E" strokeWidth={1.5} />)}
+      <text x={4} y={y(max) + 4} className="gLabel">{max}</text>
+      <text x={4} y={y(min) + 4} className="gLabel">{min}</text>
+    </svg>
+  );
+}
+
+function Heatmap({ trees }: { trees: Tree[] }) {
+  const days = 105;
+  const per = new Map<string, number>();
+  trees.filter(t => !t.dead).forEach(t => { const k = new Date(t.plantedAt).toISOString().slice(0, 10); per.set(k, (per.get(k) ?? 0) + t.minutes); });
+  const start = new Date(); start.setDate(start.getDate() - (days - 1));
+  const cells: { k: string; m: number }[] = [];
+  for (let i = 0; i < days; i++) { const d = new Date(start); d.setDate(start.getDate() + i); const k = d.toISOString().slice(0, 10); cells.push({ k, m: per.get(k) ?? 0 }); }
+  const col = (m: number) => m === 0 ? 'rgba(255,255,255,0.06)' : m < 25 ? 'rgba(143,203,139,0.35)' : m < 60 ? 'rgba(143,203,139,0.6)' : m < 120 ? '#8FCB8B' : '#E3A95C';
+  return <div className="heat">{cells.map(c => <span key={c.k} title={`${c.k} · ${c.m} min`} className="hCell" style={{ background: col(c.m) }} />)}</div>;
+}
+
+// ----- Pages -----
+function TasksPage({ lists, setLists, tasks, setTasks }: {
+  lists: List[]; setLists: (u: (p: List[]) => List[]) => void;
+  tasks: Task[]; setTasks: (u: (p: Task[]) => Task[]) => void;
+}) {
   const [view, setView] = useState<string>('myday');
   const [search, setSearch] = useState('');
   const [newList, setNewList] = useState('');
   const [newTask, setNewTask] = useState('');
   const [openTask, setOpenTask] = useState<string | null>(null);
   const [newStep, setNewStep] = useState('');
+  const [completing, setCompleting] = useState<string[]>([]);
+  const addRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.key === 'n') { e.preventDefault(); addRef.current?.focus(); }
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, []);
+
+  const q = search.toLowerCase();
+  const match = (t: Task) => !q || t.title.toLowerCase().includes(q) || t.notes.toLowerCase().includes(q);
+  const open = tasks.filter(t => !t.done && match(t));
+  const visible: Task[] =
+    view === 'myday' ? open.filter(t => t.myDay)
+    : view === 'important' ? open.filter(t => t.important)
+    : view === 'planned' ? open.filter(t => t.due).sort((a, b) => (a.due! < b.due! ? -1 : 1))
+    : view === 'all' ? open
+    : view === 'done' ? tasks.filter(t => t.done && match(t))
+    : open.filter(t => t.listId === view);
+
+  const patch = (id: string, p: Partial<Task>) => setTasks(ts => ts.map(t => t.id === id ? { ...t, ...p } : t));
+  function complete(t: Task) {
+    if (!t.done) {
+      setCompleting(c => [...c, t.id]);
+      window.setTimeout(() => { patch(t.id, { done: true, completedAt: Date.now() }); setCompleting(c => c.filter(x => x !== t.id)); }, 480);
+    } else patch(t.id, { done: false, completedAt: null });
+  }
+  const addTask = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTask.trim()) return;
+    const listId = lists.some(l => l.id === view) ? view : 'inbox';
+    setTasks(ts => [{ id: uid(), listId, title: newTask.trim(), notes: '', due: null, important: false, myDay: view === 'myday', done: false, steps: [], createdAt: Date.now(), completedAt: null }, ...ts]);
+    setNewTask(''); addRef.current?.focus();
+  };
+  const addList = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newList.trim()) return;
+    setLists(ls => [...ls, { id: uid(), name: newList.trim(), color: COLORS[ls.length % COLORS.length] }]);
+    setNewList('');
+  };
+  const activeName = view === 'myday' ? 'My Day' : view === 'important' ? 'Important' : view === 'planned' ? 'Planned' : view === 'all' ? 'All Tasks' : view === 'done' ? 'Completed' : lists.find(l => l.id === view)?.name ?? 'Tasks';
+
+  return (
+    <section className="f2todo card">
+      <aside className="rail2">
+        {([['myday', 'My Day'], ['important', 'Important'], ['planned', 'Planned'], ['all', 'All'], ['done', 'Completed']] as [string, string][]).map(([id, label]) => (
+          <button key={id} className={`railBtn ${view === id ? 'on' : ''}`} onClick={() => setView(id)}>
+            {label}
+            {id === 'myday' && open.filter(t => t.myDay).length > 0 && <span className="railCount">{open.filter(t => t.myDay).length}</span>}
+            {id === 'important' && open.filter(t => t.important).length > 0 && <span className="railCount">{open.filter(t => t.important).length}</span>}
+          </button>
+        ))}
+        <div className="railLabel">LISTS</div>
+        {lists.map(l => (
+          <button key={l.id} className={`railBtn ${view === l.id ? 'on' : ''}`} onClick={() => setView(l.id)}>
+            <span className="dot" style={{ backgroundColor: l.color }} />{l.name}
+            {open.filter(t => t.listId === l.id).length > 0 && <span className="railCount">{open.filter(t => t.listId === l.id).length}</span>}
+          </button>
+        ))}
+        <form onSubmit={addList} className="railAdd"><input placeholder="New list..." value={newList} onChange={e => setNewList(e.target.value)} /></form>
+      </aside>
+      <div className="listPane">
+        <div className="row1">
+          <span className="viewTitle">{activeName}</span>
+          <input className="search" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        {view !== 'done' && (
+          <form className="quickAdd" onSubmit={addTask}>
+            <span className="qaPlus">+</span>
+            <input ref={addRef} placeholder="Add a task... (Enter saves, N jumps here)" value={newTask} onChange={e => setNewTask(e.target.value)} />
+          </form>
+        )}
+        {visible.length === 0 && <p className="hint">Nothing here. Add something small.</p>}
+        {visible.map(t => (
+          <div key={t.id} className={`tItem ${t.done ? 'done' : ''} ${completing.includes(t.id) ? 'completing' : ''}`}>
+            <div className="tRow">
+              <button className={`check ${t.done ? 'filled' : ''}`} onClick={() => complete(t)} />
+              <span className="tTitle" onClick={() => setOpenTask(openTask === t.id ? null : t.id)}>{t.title}</span>
+              {t.important && <span className="flagOn">★</span>}
+              {t.myDay && <span className="sunOn">☀</span>}
+              {t.due && <span className={`due ${t.due < today() && !t.done ? 'over' : ''}`}>{t.due.slice(5)}</span>}
+              {t.steps.length > 0 && <span className="stepsBadge">{t.steps.filter(s => s.done).length}/{t.steps.length}</span>}
+              <button className="chev" onClick={() => setOpenTask(openTask === t.id ? null : t.id)}>{openTask === t.id ? '−' : '+'}</button>
+            </div>
+            {openTask === t.id && (
+              <div className="tExpand">
+                <textarea placeholder="Notes..." value={t.notes} onChange={e => patch(t.id, { notes: e.target.value })} />
+                <div className="tMeta">
+                  <label>Due <input type="date" value={t.due ?? ''} onChange={e => patch(t.id, { due: e.target.value || null })} /></label>
+                  <button className={`starBtn ${t.important ? 'on' : ''}`} onClick={() => patch(t.id, { important: !t.important })}>★ Important</button>
+                  <button className={`sunBtn ${t.myDay ? 'on' : ''}`} onClick={() => patch(t.id, { myDay: !t.myDay })}>☀ My Day</button>
+                  <button className="btn ghost small" onClick={() => setTasks(ts => ts.filter(x => x.id !== t.id))}>Delete</button>
+                </div>
+                <div className="stepsList">
+                  {t.steps.map(s => (
+                    <div key={s.id} className="stepRow">
+                      <button className={`check tiny ${s.done ? 'filled' : ''}`} onClick={() => patch(t.id, { steps: t.steps.map(x => x.id === s.id ? { ...x, done: !x.done } : x) })} />
+                      <span className={s.done ? 'stepDone' : ''}>{s.text}</span>
+                    </div>
+                  ))}
+                  <form className="stepAdd" onSubmit={e => { e.preventDefault(); if (!newStep.trim()) return; patch(t.id, { steps: [...t.steps, { id: uid(), text: newStep.trim(), done: false }] }); setNewStep(''); }}>
+                    <input placeholder="Add a step..." value={newStep} onChange={e => setNewStep(e.target.value)} />
+                  </form>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PlantPage({ session, plant, giveUp, trees, coins, breakOffer, setBreakOffer, breakLeft, setBreakLeft }: {
+  session: { left: number; total: number; species: string } | null;
+  plant: (species: string, mins: number) => void; giveUp: () => void;
+  trees: Tree[]; coins: number;
+  breakOffer: boolean; setBreakOffer: (b: boolean) => void;
+  breakLeft: number | null; setBreakLeft: (n: number | null) => void;
+}) {
   const [species, setSpecies] = useState('pine');
   const [mins, setMins] = useState(25);
   const [custom, setCustom] = useState('');
+  const growth = session ? 1 - session.left / session.total : 0;
+  const todayStr = today();
+  const todayTrees = trees.filter(t => new Date(t.plantedAt).toISOString().slice(0, 10) === todayStr);
+
+  return (
+    <div className="plantWrap">
+      <section className="card plantCard">
+        {!session ? (
+          <>
+            <span className="eyebrow">PLANT A TREE</span>
+            <div className="ffHero"><HeroTree sp={species} growth={1} size={150} /></div>
+            <div className="speciesRow">
+              {SPECIES.map(s => (
+                <button key={s.id} className={`spBtn ${species === s.id ? 'on' : ''} ${coins < s.cost ? 'locked' : ''}`} disabled={coins < s.cost}
+                  onClick={() => setSpecies(s.id)} title={coins < s.cost ? `Unlocks at ${s.cost} coins` : s.name}>
+                  <HeroTree sp={s.id} growth={1} size={34} />
+                  <span>{coins < s.cost ? `${s.cost}` : s.name}</span>
+                </button>
+              ))}
+            </div>
+            <div className="minRow">
+              {[15, 25, 50, 90].map(p => <button key={p} className={`chip ${mins === p ? 'on' : ''}`} onClick={() => setMins(p)}>{p}</button>)}
+              <input className="customInput" type="number" placeholder="Any min" value={custom} onChange={e => setCustom(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { const m = parseInt(custom, 10); if (m > 0 && m < 600) { setMins(m); setCustom(''); } } }} />
+            </div>
+            <button className="btn plant" onClick={() => plant(species, mins)}>Plant and focus · {mins} min</button>
+            {breakOffer && (
+              <div className="breakCard">
+                <p className="breakTitle">You earned a break.</p>
+                <div className="btnRow">
+                  <button className="btn ghost" onClick={() => { setBreakLeft(300); setBreakOffer(false); }}>Take 5 min</button>
+                  <button className="linkBtn" onClick={() => setBreakOffer(false)}>Skip</button>
+                </div>
+              </div>
+            )}
+            {breakLeft !== null && (
+              <div className="breakCard">
+                <p className="breakTime">{fmtT(breakLeft)}</p>
+                <p className="hint">Breathe. Look far away.</p>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="sessionLive">
+            <div className="liveTree" style={{ transform: `scale(${0.4 + 0.6 * growth})`, transition: 'transform 1s linear' }}>
+              <HeroTree sp={session.species} growth={1} size={190} />
+            </div>
+            <div className="growClock">{fmtT(session.left)}</div>
+            <div className="liveBar"><div className="liveFill" style={{ width: `${(growth * 100).toFixed(1)}%`, transition: 'width 1s linear' }} /></div>
+            <p className="hint">Stay. It is growing.</p>
+            <button className="linkBtn danger" onClick={giveUp}>Give up — the tree dies</button>
+          </div>
+        )}
+      </section>
+      {todayTrees.length > 0 && (
+        <section className="card todayStrip">
+          <span className="eyebrow">TODAY</span>
+          <div className="garden">
+            {todayTrees.map(t => <span key={t.id} className="gTree"><HeroTree sp={t.species} growth={1} dead={t.dead} size={44} /></span>)}
+            <div className="soil" />
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function ForestPage({ trees, coins }: { trees: Tree[]; coins: number }) {
+  const alive = trees.filter(t => !t.dead);
+  const deadN = trees.length - alive.length;
+  return (
+    <div className="plantWrap">
+      <section className="card">
+        <div className="row1">
+          <span className="viewTitle">Your forest</span>
+          <span className="hint" style={{ margin: 0 }}>{alive.length} grown · {deadN} withered</span>
+        </div>
+        <div className="garden big">
+          {trees.length === 0 && <p className="hint">No trees yet. Plant your first on the Plant page.</p>}
+          {[...trees].reverse().map(t => {
+            const h = hashN(t.id);
+            return (
+              <span key={t.id} className="gTree" style={{ transform: `rotate(${(h % 7) - 3}deg) scale(${0.85 + ((h >> 3) % 4) * 0.07})` }}
+                title={`${t.minutes} min · ${t.dead ? 'withered' : 'grown'}`}>
+                <HeroTree sp={t.species} growth={1} dead={t.dead} size={52} />
+              </span>
+            );
+          })}
+          <div className="soil" />
+        </div>
+      </section>
+      <section className="card">
+        <span className="eyebrow">COLLECTION</span>
+        <div className="collRow">
+          {SPECIES.map(s => {
+            const n = alive.filter(t => t.species === s.id).length;
+            const locked = coins < s.cost && n === 0;
+            return (
+              <div key={s.id} className={`collCard ${locked ? 'locked' : ''}`}>
+                <HeroTree sp={s.id} growth={1} size={44} dead={locked} />
+                <span className="collName">{s.name}</span>
+                <span className="collCount">{locked ? `unlock ${s.cost}` : `${n} grown`}</span>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ProgressPage({ trees, coins }: { trees: Tree[]; coins: number }) {
+  const { hist, current, max } = computeProg(trees);
+  const rank = rankOf(current);
+  const totalMin = trees.filter(t => !t.dead).reduce((a, t) => a + t.minutes, 0);
+  const doneN = trees.filter(t => !t.dead).length;
+  const rate = trees.length ? Math.round((doneN / trees.length) * 100) : 0;
+  const streak = (() => {
+    const days = new Set(trees.filter(t => !t.dead).map(t => new Date(t.plantedAt).toISOString().slice(0, 10)));
+    let s = 0; const d = new Date();
+    if (!days.has(d.toISOString().slice(0, 10))) d.setDate(d.getDate() - 1);
+    while (days.has(d.toISOString().slice(0, 10))) { s++; d.setDate(d.getDate() - 1); }
+    return s;
+  })();
+  return (
+    <div className="progWrap">
+      <section className="card progHead">
+        <div>
+          <span className="eyebrow">FOCUS RATING</span>
+          <div className="ratingRow">
+            <span className="ratingNum">{current}</span>
+            <span className="rankPill" style={{ color: rank[2], borderColor: rank[2] }}>{rank[1]}</span>
+          </div>
+          <p className="hint">max {max} · {coins} coins</p>
+        </div>
+        <div className="progStats">
+          <div className="statCard"><b>{Math.floor(totalMin / 60)}h {totalMin % 60}m</b><span>total focus</span></div>
+          <div className="statCard"><b>{doneN}</b><span>trees grown</span></div>
+          <div className="statCard"><b>{rate}%</b><span>completion</span></div>
+          <div className="statCard"><b>{streak}</b><span>day streak</span></div>
+        </div>
+      </section>
+      <section className="card">
+        <span className="eyebrow">RATING GRAPH</span>
+        <RatingGraph hist={hist} />
+      </section>
+      <section className="card">
+        <span className="eyebrow">ACTIVITY · LAST 15 WEEKS</span>
+        <Heatmap trees={trees} />
+      </section>
+      <section className="card">
+        <span className="eyebrow">SESSION HISTORY</span>
+        <table className="sessTable">
+          <thead><tr><th>When</th><th>Length</th><th>Tree</th><th>Result</th><th>Rating</th></tr></thead>
+          <tbody>
+            {[...hist].reverse().slice(0, 12).map((h, i) => (
+              <tr key={i}>
+                <td>{new Date(h.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {new Date(h.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</td>
+                <td>{h.minutes} min</td>
+                <td>{SPECIES.find(s => s.id === h.species)?.name}</td>
+                <td className={h.dead ? 'deltaDown' : 'deltaUp'}>{h.dead ? 'Withered' : 'Grown'}</td>
+                <td className={h.delta >= 0 ? 'deltaUp' : 'deltaDown'}>{h.delta >= 0 ? `+${h.delta}` : h.delta}</td>
+              </tr>
+            ))}
+            {hist.length === 0 && <tr><td colSpan={5} className="hint">No sessions yet.</td></tr>}
+          </tbody>
+        </table>
+      </section>
+    </div>
+  );
+}
+
+function FocusView() {
+  const [lists, setLists] = useStored<List[]>('it.lists', [{ id: 'inbox', name: 'Inbox', color: COLORS[0] }]);
+  const [tasks, setTasks] = useStored<Task[]>('it.tasks', []);
+  const [trees, setTrees] = useStored<Tree[]>('it.trees', []);
+  const [coins, setCoins] = useStored<number>('it.coins', 0);
+  const [page, setPage] = useState<'tasks' | 'plant' | 'forest' | 'progress'>('tasks');
   const [session, setSession] = useState<{ left: number; total: number; species: string } | null>(null);
   const [breakOffer, setBreakOffer] = useState(false);
   const [breakLeft, setBreakLeft] = useState<number | null>(null);
   const [justEarned, setJustEarned] = useState<number | null>(null);
-  const [completing, setCompleting] = useState<string[]>([]);
-  const addRef = useRef<HTMLInputElement>(null);
   const sRef = useRef(session); sRef.current = session;
 
   useEffect(() => {
@@ -169,215 +517,33 @@ function FocusView() {
     return () => window.clearInterval(t);
   }, [breakLeft !== null]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-      if (e.key === 'n') { e.preventDefault(); addRef.current?.focus(); }
-    };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, []);
-
-  function plant() { if (!session) setSession({ left: mins * 60, total: mins * 60, species }); }
+  function plant(species: string, mins: number) { if (!session) setSession({ left: mins * 60, total: mins * 60, species }); }
   function giveUp() {
     const s = sRef.current; if (!s) return;
     setTrees(tr => [...tr, { id: uid(), minutes: Math.round(s.total / 60), species: s.species, plantedAt: Date.now(), dead: true }]);
     setSession(null);
   }
 
-  const q = search.toLowerCase();
-  const match = (t: Task) => !q || t.title.toLowerCase().includes(q) || t.notes.toLowerCase().includes(q);
-  const open = tasks.filter(t => !t.done && match(t));
-  const visible: Task[] =
-    view === 'myday' ? open.filter(t => t.myDay)
-    : view === 'important' ? open.filter(t => t.important)
-    : view === 'planned' ? open.filter(t => t.due).sort((a, b) => (a.due! < b.due! ? -1 : 1))
-    : view === 'all' ? open
-    : view === 'done' ? tasks.filter(t => t.done && match(t))
-    : open.filter(t => t.listId === view);
-
-  const patch = (id: string, p: Partial<Task>) => setTasks(ts => ts.map(t => t.id === id ? { ...t, ...p } : t));
-  function complete(t: Task) {
-    if (!t.done) {
-      setCompleting(c => [...c, t.id]);
-      window.setTimeout(() => { patch(t.id, { done: true, completedAt: Date.now() }); setCompleting(c => c.filter(x => x !== t.id)); }, 480);
-    } else patch(t.id, { done: false, completedAt: null });
-  }
-  const addTask = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTask.trim()) return;
-    const listId = lists.some(l => l.id === view) ? view : 'inbox';
-    setTasks(ts => [{ id: uid(), listId, title: newTask.trim(), notes: '', due: null, important: false, myDay: view === 'myday', done: false, steps: [], createdAt: Date.now(), completedAt: null }, ...ts]);
-    setNewTask('');
-    addRef.current?.focus();
-  };
-  const addList = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newList.trim()) return;
-    setLists(ls => [...ls, { id: uid(), name: newList.trim(), color: COLORS[ls.length % COLORS.length] }]);
-    setNewList('');
-  };
-
-  const todayStr = today();
-  const todayMin = trees.filter(t => !t.dead && new Date(t.plantedAt).toISOString().slice(0, 10) === todayStr).reduce((a, t) => a + t.minutes, 0);
-  const streak = (() => {
-    const days = new Set(trees.filter(t => !t.dead).map(t => new Date(t.plantedAt).toISOString().slice(0, 10)));
-    let s = 0; const d = new Date();
-    if (!days.has(d.toISOString().slice(0, 10))) d.setDate(d.getDate() - 1);
-    while (days.has(d.toISOString().slice(0, 10))) { s++; d.setDate(d.getDate() - 1); }
-    return s;
-  })();
-  const alive = trees.filter(t => !t.dead);
-  const deadN = trees.length - alive.length;
-  const growth = session ? 1 - session.left / session.total : 0;
-  const activeListName = view === 'myday' ? 'My Day' : view === 'important' ? 'Important' : view === 'planned' ? 'Planned' : view === 'all' ? 'All Tasks' : view === 'done' ? 'Completed' : lists.find(l => l.id === view)?.name ?? 'Tasks';
+  const todayMin = trees.filter(t => !t.dead && new Date(t.plantedAt).toISOString().slice(0, 10) === today()).reduce((a, t) => a + t.minutes, 0);
 
   return (
     <div className="f2wrap">
-      <div className="f2top">
-        <div>
-          <span className="eyebrow">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).toUpperCase()}</span>
-          <h1 className="pageTitle" style={{ marginBottom: 0 }}>Focus</h1>
-        </div>
-        <div className="f2stats">
+      <div className="fpNav">
+        {([['tasks', 'Tasks'], ['plant', 'Plant'], ['forest', 'Forest'], ['progress', 'Progress']] as ['tasks' | 'plant' | 'forest' | 'progress', string][]).map(([id, label]) => (
+          <button key={id} className={`fpTab ${page === id ? 'on' : ''}`} onClick={() => setPage(id)}>
+            {label}
+            {id === 'plant' && session && <span className="liveDot" />}
+          </button>
+        ))}
+        <div className="fpStats">
           <span className="statChip"><b>{todayMin}</b> min today</span>
-          <span className="statChip"><b>{streak}</b> day streak</span>
           <span className="statChip"><b>{coins}</b> coins{justEarned !== null && <span className="coinPop">+{justEarned}</span>}</span>
         </div>
       </div>
-
-      <div className="f2grid">
-        <section className="f2todo card">
-          <aside className="rail2">
-            {([['myday', 'My Day'], ['important', 'Important'], ['planned', 'Planned'], ['all', 'All'], ['done', 'Completed']] as [string, string][]).map(([id, label]) => (
-              <button key={id} className={`railBtn ${view === id ? 'on' : ''}`} onClick={() => setView(id)}>
-                {label}
-                {id === 'myday' && open.filter(t => t.myDay).length > 0 && <span className="railCount">{open.filter(t => t.myDay).length}</span>}
-                {id === 'important' && open.filter(t => t.important).length > 0 && <span className="railCount">{open.filter(t => t.important).length}</span>}
-              </button>
-            ))}
-            <div className="railLabel">LISTS</div>
-            {lists.map(l => (
-              <button key={l.id} className={`railBtn ${view === l.id ? 'on' : ''}`} onClick={() => setView(l.id)}>
-                <span className="dot" style={{ backgroundColor: l.color }} />{l.name}
-                {open.filter(t => t.listId === l.id).length > 0 && <span className="railCount">{open.filter(t => t.listId === l.id).length}</span>}
-              </button>
-            ))}
-            <form onSubmit={addList} className="railAdd"><input placeholder="New list..." value={newList} onChange={e => setNewList(e.target.value)} /></form>
-          </aside>
-
-          <div className="listPane">
-            <div className="row1">
-              <span className="viewTitle">{activeListName}</span>
-              <input className="search" placeholder="Search (titles, notes)" value={search} onChange={e => setSearch(e.target.value)} />
-            </div>
-            {view !== 'done' && (
-              <form className="quickAdd" onSubmit={addTask}>
-                <span className="qaPlus">+</span>
-                <input ref={addRef} placeholder="Add a task... (Enter to save, N to jump here)" value={newTask} onChange={e => setNewTask(e.target.value)} />
-              </form>
-            )}
-            {visible.length === 0 && <p className="hint">Nothing here. Add something small.</p>}
-            {visible.map(t => (
-              <div key={t.id} className={`tItem ${t.done ? 'done' : ''} ${completing.includes(t.id) ? 'completing' : ''}`}>
-                <div className="tRow">
-                  <button className={`check ${t.done ? 'filled' : ''}`} onClick={() => complete(t)} />
-                  <span className="tTitle" onClick={() => setOpenTask(openTask === t.id ? null : t.id)}>{t.title}</span>
-                  {t.important && <span className="flagOn">★</span>}
-                  {t.myDay && <span className="sunOn">☀</span>}
-                  {t.due && <span className={`due ${t.due < today() && !t.done ? 'over' : ''}`}>{t.due.slice(5)}</span>}
-                  {t.steps.length > 0 && <span className="stepsBadge">{t.steps.filter(s => s.done).length}/{t.steps.length}</span>}
-                  <button className="chev" onClick={() => setOpenTask(openTask === t.id ? null : t.id)}>{openTask === t.id ? '−' : '+'}</button>
-                </div>
-                {openTask === t.id && (
-                  <div className="tExpand">
-                    <textarea placeholder="Notes..." value={t.notes} onChange={e => patch(t.id, { notes: e.target.value })} />
-                    <div className="tMeta">
-                      <label>Due <input type="date" value={t.due ?? ''} onChange={e => patch(t.id, { due: e.target.value || null })} /></label>
-                      <button className={`starBtn ${t.important ? 'on' : ''}`} onClick={() => patch(t.id, { important: !t.important })}>★ Important</button>
-                      <button className={`sunBtn ${t.myDay ? 'on' : ''}`} onClick={() => patch(t.id, { myDay: !t.myDay })}>☀ My Day</button>
-                      <button className="btn ghost small" onClick={() => setTasks(ts => ts.filter(x => x.id !== t.id))}>Delete</button>
-                    </div>
-                    <div className="stepsList">
-                      {t.steps.map(s => (
-                        <div key={s.id} className="stepRow">
-                          <button className={`check tiny ${s.done ? 'filled' : ''}`} onClick={() => patch(t.id, { steps: t.steps.map(x => x.id === s.id ? { ...x, done: !x.done } : x) })} />
-                          <span className={s.done ? 'stepDone' : ''}>{s.text}</span>
-                        </div>
-                      ))}
-                      <form className="stepAdd" onSubmit={e => { e.preventDefault(); if (!newStep.trim()) return; patch(t.id, { steps: [...t.steps, { id: uid(), text: newStep.trim(), done: false }] }); setNewStep(''); }}>
-                        <input placeholder="Add a step..." value={newStep} onChange={e => setNewStep(e.target.value)} />
-                      </form>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="f2forest card">
-          {!session ? (
-            <>
-              <span className="eyebrow">PLANT A TREE</span>
-              <div className="ffHero"><HeroTree sp={species} growth={1} size={130} /></div>
-              <div className="speciesRow">
-                {SPECIES.map(s => (
-                  <button key={s.id} className={`spBtn ${species === s.id ? 'on' : ''} ${coins < s.cost ? 'locked' : ''}`} disabled={coins < s.cost}
-                    onClick={() => setSpecies(s.id)} title={coins < s.cost ? `Unlocks at ${s.cost} coins` : s.name}>
-                    <HeroTree sp={s.id} growth={1} size={34} />
-                    <span>{coins < s.cost ? `${s.cost}` : s.name}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="minRow">
-                {[15, 25, 50, 90].map(p => <button key={p} className={`chip ${mins === p ? 'on' : ''}`} onClick={() => setMins(p)}>{p}</button>)}
-                <input className="customInput" type="number" placeholder="Any min" value={custom} onChange={e => setCustom(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') { const m = parseInt(custom, 10); if (m > 0 && m < 600) { setMins(m); setCustom(''); } } }} />
-              </div>
-              <button className="btn plant" onClick={plant}>Plant and focus · {mins} min</button>
-              {breakOffer && (
-                <div className="breakCard">
-                  <p className="breakTitle">You earned a break.</p>
-                  <div className="btnRow">
-                    <button className="btn ghost" onClick={() => { setBreakLeft(300); setBreakOffer(false); }}>Take 5 min</button>
-                    <button className="linkBtn" onClick={() => setBreakOffer(false)}>Skip</button>
-                  </div>
-                </div>
-              )}
-              {breakLeft !== null && (
-                <div className="breakCard">
-                  <p className="breakTime">{fmtT(breakLeft)}</p>
-                  <p className="hint">Breathe. Look far away.</p>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="sessionLive">
-              <div className="liveTree" style={{ transform: `scale(${0.4 + 0.6 * growth})`, transition: 'transform 1s linear' }}>
-                <HeroTree sp={session.species} growth={1} size={170} />
-              </div>
-              <div className="growClock">{fmtT(session.left)}</div>
-              <div className="liveBar"><div className="liveFill" style={{ width: `${(growth * 100).toFixed(1)}%`, transition: 'width 1s linear' }} /></div>
-              <p className="hint">Stay. It is growing.</p>
-              <button className="linkBtn danger" onClick={giveUp}>Give up — the tree dies</button>
-            </div>
-          )}
-          <div className="garden">
-            {trees.slice(-12).map(t => {
-              const h = hashN(t.id);
-              return (
-                <span key={t.id} className="gTree" style={{ transform: `rotate(${(h % 7) - 3}deg) scale(${0.85 + ((h >> 3) % 4) * 0.07})` }}>
-                  <HeroTree sp={t.species} growth={1} dead={t.dead} size={46} />
-                </span>
-              );
-            })}
-            <div className="soil" />
-          </div>
-          <p className="hint">{alive.length} grown · {deadN} withered</p>
-        </section>
-      </div>
+      {page === 'tasks' && <TasksPage lists={lists} setLists={setLists} tasks={tasks} setTasks={setTasks} />}
+      {page === 'plant' && <PlantPage session={session} plant={plant} giveUp={giveUp} trees={trees} coins={coins} breakOffer={breakOffer} setBreakOffer={setBreakOffer} breakLeft={breakLeft} setBreakLeft={setBreakLeft} />}
+      {page === 'forest' && <ForestPage trees={trees} coins={coins} />}
+      {page === 'progress' && <ProgressPage trees={trees} coins={coins} />}
     </div>
   );
 }
