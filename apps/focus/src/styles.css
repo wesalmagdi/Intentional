@@ -882,3 +882,30 @@ input, textarea { color-scheme: dark; }
     width: 100%;
   }
 }
+
+/* Calm-style immersive Notice scene */
+.calmScene{position:relative;border-radius:28px;overflow:hidden;min-height:600px;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.08)}
+.calmSky{position:absolute;inset:0;background:linear-gradient(180deg,#070B1E 0%,#101736 34%,#2A2450 58%,#5C3A63 76%,#A05C63 90%,#D08A5E 100%)}
+.cStar{position:absolute;border-radius:50%;background:#F4EFE3;animation:twinkle 3s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.15}50%{opacity:.9}}
+.calmMist{position:absolute;left:-30%;width:160%;height:120px;filter:blur(30px);opacity:.16;background:radial-gradient(ellipse at center,#BFA8D8,transparent 70%)}
+.calmMist.m1{bottom:120px;animation:mistDrift 26s ease-in-out infinite alternate}
+.calmMist.m2{bottom:60px;animation:mistDrift 34s ease-in-out infinite alternate-reverse;opacity:.1}
+@keyframes mistDrift{from{transform:translateX(-6%)}to{transform:translateX(6%)}}
+.cFly{position:absolute;width:4px;height:4px;border-radius:50%;background:#E8C15A;box-shadow:0 0 10px 3px rgba(232,193,90,.5);animation:flyFloat 9s ease-in-out infinite}
+@keyframes flyFloat{0%,100%{transform:translate(0,0);opacity:.2}25%{opacity:.9}50%{transform:translate(14px,-22px);opacity:.5}75%{opacity:.9}}
+.calmMounts{position:absolute;left:0;right:0;bottom:0;width:100%;height:180px}
+.calmContent{position:relative;z-index:2;min-height:600px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:60px 24px;text-align:center}
+.calmEyebrow{font-size:10px;letter-spacing:.28em;font-weight:700;color:rgba(244,239,227,.65);text-transform:uppercase}
+.calmOrbWrap{padding:30px}
+.calmOrb{width:170px;height:170px;border-radius:50%;background:radial-gradient(circle at 38% 32%,rgba(255,255,255,.95),rgba(191,168,216,.75) 40%,rgba(94,120,190,.45) 70%,rgba(94,120,190,.1));box-shadow:0 0 60px 18px rgba(150,140,220,.35),0 0 140px 60px rgba(120,110,200,.18),inset 0 0 40px rgba(255,255,255,.35);transition:transform .12s linear}
+.calmText{font-family:var(--serif);font-style:italic;font-size:30px;color:#F4EFE3;text-shadow:0 2px 30px rgba(0,0,0,.5);animation:calmFade 1.2s ease}
+@keyframes calmFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.calmTitle{font-family:var(--serif);font-style:italic;font-size:44px;color:#F4EFE3;text-shadow:0 2px 40px rgba(0,0,0,.5)}
+.calmSub{font-size:14px;color:rgba(244,239,227,.7);max-width:380px;line-height:1.7}
+.calmCount{font-family:var(--serif);font-size:64px;color:#E8C15A;text-shadow:0 0 40px rgba(232,193,90,.45)}
+.calmSkip{background:none;border:none;color:rgba(244,239,227,.55);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:4px;transition:color .15s}
+.calmSkip:hover{color:#F4EFE3}
+.calmCard{background:rgba(10,14,32,.55);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:28px;display:flex;flex-direction:column;gap:16px;max-width:460px;width:100%;text-align:left}
+.calmInput{width:100%;min-height:110px;resize:vertical;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:14px;color:#F4EFE3;padding:14px;font-family:var(--serif);font-size:16px;outline:none;transition:border-color .2s,box-shadow .2s}
+.calmInput:focus{border-color:rgba(232,193,90,.5);box-shadow:0 0 0 3px rgba(232,193,90,.12)}

@@ -908,31 +908,68 @@ function JournalView() {
 }
 
 // ---------- Notice ----------
+const CALM_STARS = Array.from({ length: 70 }, (_, i) => {
+  const h = hashN('star' + i);
+  return { left: h % 100, top: (h >> 4) % 60, size: 1 + ((h >> 7) % 3) * 0.8, delay: (h % 50) / 10, dur: 2.5 + ((h >> 9) % 40) / 10 };
+});
+const CALM_FLIES = Array.from({ length: 9 }, (_, i) => {
+  const h = hashN('fly' + i);
+  return { left: 8 + (h % 84), bottom: 8 + ((h >> 5) % 26), delay: (h % 70) / 10, dur: 7 + ((h >> 8) % 60) / 10 };
+});
+
+function CalmScene({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="calmScene">
+      <div className="calmSky" />
+      {CALM_STARS.map((s, i) => (
+        <span key={i} className="cStar" style={{ left: `${s.left}%`, top: `${s.top}%`, width: s.size, height: s.size, animationDelay: `${s.delay}s`, animationDuration: `${s.dur}s` }} />
+      ))}
+      <div className="calmMist m1" />
+      <div className="calmMist m2" />
+      {CALM_FLIES.map((f, i) => (
+        <span key={i} className="cFly" style={{ left: `${f.left}%`, bottom: `${f.bottom}%`, animationDelay: `${f.delay}s`, animationDuration: `${f.dur}s` }} />
+      ))}
+      <svg className="calmMounts" viewBox="0 0 1440 320" preserveAspectRatio="none">
+        <path d="M0 220 L240 120 L480 210 L760 90 L1040 200 L1260 130 L1440 190 L1440 320 L0 320 Z" fill="#161D33" opacity="0.85" />
+        <path d="M0 262 L200 192 L430 252 L700 172 L980 252 L1240 202 L1440 242 L1440 320 L0 320 Z" fill="#0D1424" />
+      </svg>
+      <div className="calmContent">{children}</div>
+    </div>
+  );
+}
+
 function NoticeView({ onKeep }: { onKeep: (d: Discovery) => void }) {
   const [phase, setPhase] = useState<'arrive' | 'wait' | 'write'>('arrive');
   const [text, setText] = useState('');
   const [label, setLabel] = useState('Settle in.');
+  const [fadeKey, setFadeKey] = useState(0);
   const [left60, setLeft60] = useState(60);
-  const scaleRef = useRef<HTMLDivElement>(null);
+  const orbRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const startRef = useRef(Date.now());
   const [hasAudio, setHasAudio] = useState(true);
+
+  useEffect(() => { setFadeKey(k => k + 1); }, [label]);
 
   useEffect(() => {
     if (phase !== 'arrive') return;
+    startRef.current = Date.now();
     const a = new Audio('/breathguide.wav');
     audioRef.current = a;
     a.play().catch(() => setHasAudio(false));
     const t = window.setInterval(() => {
-      const cur = hasAudio && !a.paused ? a.currentTime : (Date.now() / 1000) % 600;
-      if (cur < 8) { setLabel('Settle in.'); }
-      else if (cur >= 589) { setLabel('Well done.'); }
-      else {
+      const cur = hasAudio && !a.paused ? a.currentTime : (Date.now() - startRef.current) / 1000;
+      let next = 'Settle in.';
+      let scale = 1;
+      if (cur >= 8 && cur < 589) {
         const m = (cur - 8) % 14;
-        if (m < 4) { setLabel('Breathe in.'); scaleRef.current?.style.setProperty('transform', `scale(${1 + 0.4 * (m / 4)})`); }
-        else if (m < 8) { setLabel('Hold.'); scaleRef.current?.style.setProperty('transform', 'scale(1.4)'); }
-        else { setLabel('Let it go.'); scaleRef.current?.style.setProperty('transform', `scale(${1.4 - 0.4 * ((m - 8) / 6)})`); }
-      }
-      if (a.duration && cur >= a.duration - 0.5) { a.pause(); setPhase('wait'); }
+        if (m < 4) { next = 'Breathe in.'; scale = 1 + 0.45 * (m / 4); }
+        else if (m < 8) { next = 'Hold.'; scale = 1.45; }
+        else { next = 'Let it go.'; scale = 1.45 - 0.45 * ((m - 8) / 6); }
+      } else if (cur >= 589) next = 'Well done.';
+      setLabel(next);
+      if (orbRef.current) orbRef.current.style.transform = `scale(${scale})`;
+      if ((a.duration && cur >= a.duration - 0.5) || (!hasAudio && cur >= 600)) { a.pause(); setPhase('wait'); }
     }, 100);
     return () => { window.clearInterval(t); a.pause(); };
   }, [phase, hasAudio]);
@@ -944,29 +981,32 @@ function NoticeView({ onKeep }: { onKeep: (d: Discovery) => void }) {
   }, [phase]);
 
   if (phase === 'write') return (
-    <div className="narrow">
-      <h1 className="pageTitle">What do you notice right now?</h1>
-      <textarea className="bigInput" placeholder="One line is enough." value={text} onChange={e => setText(e.target.value)} />
-      <div className="btnRow"><button className="btn" onClick={() => { if (text.trim()) onKeep({ id: uid(), category: 'Notice', prompt: 'What do you notice right now?', findings: { noticed: text.trim() }, createdAt: new Date().toISOString() }); }}>Keep this.</button></div>
-    </div>
+    <CalmScene>
+      <div className="calmCard">
+        <span className="calmEyebrow">WHAT DID YOU NOTICE?</span>
+        <textarea className="calmInput" placeholder="One line is enough..." value={text} onChange={e => setText(e.target.value)} />
+        <button className="btn" onClick={() => { if (text.trim()) onKeep({ id: uid(), category: 'Notice', prompt: 'What do you notice right now?', findings: { noticed: text.trim() }, createdAt: new Date().toISOString() }); }}>Keep this.</button>
+      </div>
+    </CalmScene>
   );
+
   if (phase === 'wait') return (
-    <div className="narrow centerCol">
-      <span className="eyebrow">NOTICE</span>
-      <h1 className="pageTitle">Look up.</h1>
-      <p className="modeDesc">For one minute, just notice.</p>
-      <div className="waitNum">{left60}</div>
-      <button className="linkBtn" onClick={() => setPhase('write')}>I'm ready</button>
-    </div>
+    <CalmScene>
+      <span className="calmEyebrow">NOTICE</span>
+      <h2 className="calmTitle">Look up.</h2>
+      <p className="calmSub">For one minute, just notice the world around you.</p>
+      <div className="calmCount">{left60}</div>
+      <button className="calmSkip" onClick={() => setPhase('write')}>I'm ready</button>
+    </CalmScene>
   );
+
   return (
-    <div className="narrow centerCol">
-      <span className="eyebrow">NOTICE</span>
-      <h1 className="pageTitle">Arrive first.</h1>
-      <div className="breathOuter"><div ref={scaleRef} className="breathCircle" /></div>
-      <p className="modeDesc">{label}</p>
-      <button className="linkBtn" onClick={() => { audioRef.current?.pause(); setPhase('wait'); }}>I'm here already</button>
-    </div>
+    <CalmScene>
+      <span className="calmEyebrow">A QUIET MINUTE</span>
+      <div className="calmOrbWrap"><div ref={orbRef} className="calmOrb" /></div>
+      <p key={fadeKey} className="calmText">{label}</p>
+      <button className="calmSkip" onClick={() => { audioRef.current?.pause(); setPhase('wait'); }}>I'm here already</button>
+    </CalmScene>
   );
 }
 
