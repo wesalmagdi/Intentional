@@ -1450,6 +1450,19 @@ function RevisitView({ discoveries, onKeep }: { discoveries: Discovery[]; onKeep
   );
 }
 
+function Deco() {
+  return (
+    <div className="deco" aria-hidden>
+      <svg className="dd d1" viewBox="0 0 24 24"><path d="M12 2l2.6 6.6L21 11l-6.4 2.4L12 20l-2.6-6.6L3 11l6.4-2.4z" fill="#FFD9E6" /></svg>
+      <svg className="dd d2" viewBox="0 0 24 24"><path d="M12 21s-7-4.6-9.5-9C.6 8.6 2.6 5 6 5c2 0 3.2 1 4 2.2C10.8 6 12 5 14 5c3.4 0 5.4 3.6 3.5 7C19 16.4 12 21 12 21z" fill="#BFE6CD" /></svg>
+      <svg className="dd d3" viewBox="0 0 32 20"><ellipse cx="11" cy="13" rx="9" ry="6" fill="#E6E0FF" /><ellipse cx="20" cy="10" rx="10" ry="7" fill="#E6E0FF" /></svg>
+      <svg className="dd d4" viewBox="0 0 24 24"><path d="M12 0c1 6 5 10 12 12-7 2-11 6-12 12-1-6-5-10-12-12 7-2 11-6 12-12z" fill="#FFF0D9" /></svg>
+      <svg className="dd d5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="#FFD9E6" /><g fill="#FFE9F1"><circle cx="12" cy="4" r="3.4" /><circle cx="12" cy="20" r="3.4" /><circle cx="4" cy="12" r="3.4" /><circle cx="20" cy="12" r="3.4" /></g></svg>
+      <svg className="dd d6" viewBox="0 0 24 24"><path d="M20 14A8.5 8.5 0 1 1 10 3.5 7 7 0 0 0 20 14z" fill="#DDEBFF" /></svg>
+    </div>
+  );
+}
+
 // ---------- App shell ----------
 export default function App() {
   const [nav, setNav] = useState<string>('home');
@@ -1467,7 +1480,7 @@ export default function App() {
   const dateLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
-    <div className="shell">
+    <div className="shell"><Deco />
       <aside className="side">
         <span className="sideBrand"><svg className="mascot" width="26" height="26" viewBox="0 0 40 40"><circle cx="20" cy="22" r="14" fill="#FFD9E6" /><circle cx="15" cy="21" r="1.8" fill="#4A3B5C" /><circle cx="25" cy="21" r="1.8" fill="#4A3B5C" /><path d="M17 25 Q20 28 23 25" stroke="#4A3B5C" strokeWidth="1.6" fill="none" strokeLinecap="round" /><circle cx="11.5" cy="24" r="2.4" fill="#FF9FB6" opacity=".7" /><circle cx="28.5" cy="24" r="2.4" fill="#FF9FB6" opacity=".7" /><path d="M20 8 Q23 3 28 6 Q24 11 20 8" fill="#8FD6A8" /></svg>Intentional</span>
         {([['home', 'Home'], ['focus', 'Focus'], ['learn', 'Learn'], ['journal', 'Journal'], ['notice', 'Notice'], ['choose', 'Choose'], ['zoom', 'Zoom Out'], ['library', 'Library'], ['revisit', 'Revisit']] as [string, string][]).map(([id, label]) => (

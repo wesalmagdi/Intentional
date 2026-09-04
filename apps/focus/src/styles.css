@@ -1072,3 +1072,53 @@ body::before { background:
 .confetti{position:absolute;inset:-10px 0 0 0;pointer-events:none;z-index:4}
 .confetti i{position:absolute;top:38%;width:8px;height:13px;border-radius:2px;animation:confFall 1.15s ease forwards}
 @keyframes confFall{0%{opacity:1;translate:0 -10px}100%{opacity:0;translate:0 130px}}
+
+/* ===== CUTE DESIGN SYSTEM v2 ===== */
+body{background-image:radial-gradient(rgba(255,159,182,.13) 1.6px,transparent 1.6px);background-size:28px 28px}
+.deco{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.dd{position:absolute;opacity:.55;animation:floaty 10s ease-in-out infinite}
+.d1{width:34px;top:12%;left:5%}
+.d2{width:30px;top:72%;left:3%;animation-delay:1.2s}
+.d3{width:70px;top:7%;right:7%;animation-delay:2s}
+.d4{width:26px;top:42%;right:3%;animation-delay:.6s}
+.d5{width:30px;bottom:12%;right:11%;animation-delay:1.8s}
+.d6{width:30px;bottom:7%;left:13%;animation-delay:2.6s}
+@keyframes floaty{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-14px) rotate(5deg)}}
+
+/* center every page */
+.main{min-width:0}
+.narrow,.plantWrap,.progWrap,.jWrite,.jTimeline,.jInsights,.jReader{width:100%;max-width:780px;margin:0 auto}
+.jApp{max-width:1080px;margin:0 auto}
+.f2wrap{max-width:1180px;margin:0 auto}
+
+/* squiggle under titles */
+.pageTitle{position:relative;display:inline-block}
+.pageTitle::after{content:'';position:absolute;left:2px;right:6px;bottom:-9px;height:8px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='8' viewBox='0 0 40 8'%3E%3Cpath d='M0 5 Q5 0 10 5 T20 5 T30 5 T40 5' fill='none' stroke='%23FF9FB6' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x;background-size:40px 8px}
+
+/* sticker eyebrows */
+.eyebrow{display:inline-block;background:#FFE9F1;border:2px solid #FFD3E2;border-radius:999px;padding:5px 13px;color:#E85D90;letter-spacing:.14em}
+
+/* layered cards */
+.card{background:linear-gradient(180deg,#FFFFFF,#FFF9FC)}
+.spinCard,.homeCard,.plantCard{position:relative}
+.spinCard::before,.plantCard::before{content:'';position:absolute;top:-11px;left:50%;transform:translateX(-50%) rotate(-2deg);width:96px;height:20px;background:repeating-linear-gradient(45deg,rgba(255,159,182,.5) 0 6px,rgba(255,255,255,.6) 6px 12px);border-radius:4px;box-shadow:0 2px 6px rgba(232,93,144,.18);z-index:2}
+.homeCard::before{content:'';position:absolute;top:-9px;left:22px;transform:rotate(-6deg);width:68px;height:18px;background:repeating-linear-gradient(45deg,rgba(159,123,255,.35) 0 6px,rgba(255,255,255,.6) 6px 12px);border-radius:4px;z-index:2}
+.spinCard,.plantCard{outline:2px dashed #FFD3E2;outline-offset:-10px}
+
+/* floating sidebar panel */
+.shell{padding-right:14px}
+.side{margin:14px 0 14px 14px;border-radius:26px;height:calc(100vh - 28px);top:14px;border:2px solid var(--line);background:#FFF}
+
+/* rounder, sticker-ier controls */
+.quickAdd,.msAddTask{border-radius:999px}
+.msTaskRow{border-radius:18px}
+.f2todo,.msSidebar,.msList,.msDetail{border-radius:26px}
+.jEditorWrap{border-radius:26px}
+.jEntryCard{border-radius:20px}
+.statChip{border:2px solid var(--line)}
+.sessTable td,.sessTable th{border-bottom:2px solid var(--line)}
+
+/* centered learn column */
+.narrow .tabs{justify-content:center}
+.narrow .modeDesc{text-align:center}
+.narrow .btnRow{justify-content:center}
