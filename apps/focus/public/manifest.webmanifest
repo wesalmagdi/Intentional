@@ -1,0 +1,9 @@
+{
+  "name": "Intentional Focus",
+  "short_name": "Focus",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4EEE3",
+  "theme_color": "#F4EEE3",
+  "description": "A quiet to-do list and flexible pomodoro for Linux."
+}
