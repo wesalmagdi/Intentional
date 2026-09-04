@@ -27,29 +27,59 @@ const SPECIES = [
 ];
 
 let tickCtx: AudioContext | null = null;
+function initAudio() {
+  if (!tickCtx) {
+    try {
+      const Ctor = window.AudioContext ?? (window as any).webkitAudioContext;
+      if (Ctor) tickCtx = new Ctor();
+    } catch (e) {
+      console.warn('Audio not available:', e);
+    }
+  }
+  if (tickCtx?.state === 'suspended') {
+    tickCtx.resume().catch(() => {});
+  }
+  return tickCtx;
+}
 function tick() {
+  const ctx = initAudio();
+  if (!ctx) return;
   try {
-    tickCtx = tickCtx ?? new AudioContext();
-    const o = tickCtx.createOscillator(); const g = tickCtx.createGain();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
     o.frequency.value = 900;
-    g.gain.setValueAtTime(0.1, tickCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, tickCtx.currentTime + 0.05);
-    o.connect(g); g.connect(tickCtx.destination); o.start(); o.stop(tickCtx.currentTime + 0.06);
-  } catch {}
+    g.gain.setValueAtTime(0.1, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.05);
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start();
+    o.stop(ctx.currentTime + 0.06);
+  } catch (e) {
+    console.warn('Tick failed:', e);
+  }
 }
 function chime() {
+  const ctx = initAudio();
+  if (!ctx) return;
   try {
-    tickCtx = tickCtx ?? new AudioContext();
     const note = (f: number, at: number) => {
-      const o = tickCtx!.createOscillator(); const g = tickCtx!.createGain();
-      o.type = 'sine'; o.frequency.value = f;
-      g.gain.setValueAtTime(0.0001, tickCtx!.currentTime + at);
-      g.gain.exponentialRampToValueAtTime(0.18, tickCtx!.currentTime + at + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, tickCtx!.currentTime + at + 0.6);
-      o.connect(g); g.connect(tickCtx!.destination); o.start(tickCtx!.currentTime + at); o.stop(tickCtx!.currentTime + at + 0.7);
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + at);
+      g.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + at + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + at + 0.6);
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start(ctx.currentTime + at);
+      o.stop(ctx.currentTime + at + 0.7);
     };
-    note(660, 0); note(880, 0.18);
-  } catch {}
+    note(660, 0);
+    note(880, 0.18);
+  } catch (e) {
+    console.warn('Chime failed:', e);
+  }
 }
 
 function TreeSVG({ sp, g, dead, size = 64 }: { sp: string; g: number; dead?: boolean; size?: number }) {
@@ -1236,6 +1266,10 @@ function NoticeView({ onKeep }: { onKeep: (d: Discovery) => void }) {
     startRef.current = Date.now();
     const a = new Audio('/breathguide.wav');
     audioRef.current = a;
+    a.addEventListener('error', () => {
+      console.warn('Breath guide audio not available');
+      setHasAudio(false);
+    });
     a.play().catch(() => setHasAudio(false));
     const t = window.setInterval(() => {
       const cur = hasAudio && !a.paused ? a.currentTime : (Date.now() - startRef.current) / 1000;
