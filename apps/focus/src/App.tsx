@@ -177,122 +177,327 @@ function TasksPage({ lists, setLists, tasks, setTasks }: {
   const [search, setSearch] = useState('');
   const [newList, setNewList] = useState('');
   const [newTask, setNewTask] = useState('');
-  const [openTask, setOpenTask] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newStep, setNewStep] = useState('');
-  const [completing, setCompleting] = useState<string[]>([]);
   const addRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-      if (e.key === 'n') { e.preventDefault(); addRef.current?.focus(); }
+      if (e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        addRef.current?.focus();
+      }
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, []);
 
-  const q = search.toLowerCase();
-  const match = (t: Task) => !q || t.title.toLowerCase().includes(q) || t.notes.toLowerCase().includes(q);
-  const open = tasks.filter(t => !t.done && match(t));
-  const visible: Task[] =
-    view === 'myday' ? open.filter(t => t.myDay)
-    : view === 'important' ? open.filter(t => t.important)
-    : view === 'planned' ? open.filter(t => t.due).sort((a, b) => (a.due! < b.due! ? -1 : 1))
-    : view === 'all' ? open
-    : view === 'done' ? tasks.filter(t => t.done && match(t))
-    : open.filter(t => t.listId === view);
+  const selected = selectedId ? tasks.find(t => t.id === selectedId) ?? null : null;
+  const q = search.trim().toLowerCase();
 
-  const patch = (id: string, p: Partial<Task>) => setTasks(ts => ts.map(t => t.id === id ? { ...t, ...p } : t));
-  function complete(t: Task) {
-    if (!t.done) {
-      setCompleting(c => [...c, t.id]);
-      window.setTimeout(() => { patch(t.id, { done: true, completedAt: Date.now() }); setCompleting(c => c.filter(x => x !== t.id)); }, 480);
-    } else patch(t.id, { done: false, completedAt: null });
-  }
+  const belongsToView = (t: Task) => {
+    if (view === 'myday') return t.myDay;
+    if (view === 'important') return t.important;
+    if (view === 'planned') return !!t.due;
+    if (view === 'all') return true;
+    if (view === 'done') return t.done;
+    return t.listId === view;
+  };
+
+  const matchesSearch = (t: Task) => {
+    if (!q) return true;
+    return (
+      t.title.toLowerCase().includes(q) ||
+      t.notes.toLowerCase().includes(q) ||
+      t.steps.some(s => s.text.toLowerCase().includes(q))
+    );
+  };
+
+  const filtered = tasks.filter(t => belongsToView(t) && matchesSearch(t));
+  const openTasks = filtered.filter(t => !t.done);
+  const doneTasks = filtered.filter(t => t.done);
+
+  const patch = (id: string, patch: Partial<Task>) => {
+    setTasks(ts => ts.map(t => t.id === id ? { ...t, ...patch } : t));
+  };
+
+  const complete = (t: Task) => {
+    patch(t.id, { done: !t.done, completedAt: t.done ? null : Date.now() });
+  };
+
   const addTask = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTask.trim()) return;
+    const title = newTask.trim();
+    if (!title) return;
+
     const listId = lists.some(l => l.id === view) ? view : 'inbox';
-    setTasks(ts => [{ id: uid(), listId, title: newTask.trim(), notes: '', due: null, important: false, myDay: view === 'myday', done: false, steps: [], createdAt: Date.now(), completedAt: null }, ...ts]);
-    setNewTask(''); addRef.current?.focus();
+    const task: Task = {
+      id: uid(),
+      listId,
+      title,
+      notes: '',
+      due: null,
+      important: view === 'important',
+      myDay: view === 'myday',
+      done: false,
+      steps: [],
+      createdAt: Date.now(),
+      completedAt: null,
+    };
+
+    setTasks(ts => [task, ...ts]);
+    setSelectedId(task.id);
+    setNewTask('');
+    window.setTimeout(() => addRef.current?.focus(), 0);
   };
+
   const addList = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newList.trim()) return;
-    setLists(ls => [...ls, { id: uid(), name: newList.trim(), color: COLORS[ls.length % COLORS.length] }]);
+    const name = newList.trim();
+    if (!name) return;
+    const list: List = { id: uid(), name, color: COLORS[lists.length % COLORS.length] };
+    setLists(ls => [...ls, list]);
+    setView(list.id);
     setNewList('');
   };
-  const activeName = view === 'myday' ? 'My Day' : view === 'important' ? 'Important' : view === 'planned' ? 'Planned' : view === 'all' ? 'All Tasks' : view === 'done' ? 'Completed' : lists.find(l => l.id === view)?.name ?? 'Tasks';
+
+  const addStep = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selected || !newStep.trim()) return;
+    patch(selected.id, {
+      steps: [...selected.steps, { id: uid(), text: newStep.trim(), done: false }],
+    });
+    setNewStep('');
+  };
+
+  const deleteTask = (id: string) => {
+    setTasks(ts => ts.filter(t => t.id !== id));
+    if (selectedId === id) setSelectedId(null);
+  };
+
+  const viewTitle =
+    view === 'myday' ? 'My Day'
+    : view === 'important' ? 'Important'
+    : view === 'planned' ? 'Planned'
+    : view === 'all' ? 'All Tasks'
+    : view === 'done' ? 'Completed'
+    : lists.find(l => l.id === view)?.name ?? 'Tasks';
+
+  const viewSubtitle =
+    view === 'myday' ? 'Tasks you chose for today.'
+    : view === 'important' ? 'Starred work that matters most.'
+    : view === 'planned' ? 'Everything with a due date.'
+    : view === 'all' ? 'Every open task across your lists.'
+    : view === 'done' ? 'A quiet record of what you finished.'
+    : `${openTasks.length} open · ${doneTasks.length} completed`;
+
+  const smartCount = {
+    myday: tasks.filter(t => !t.done && t.myDay).length,
+    important: tasks.filter(t => !t.done && t.important).length,
+    planned: tasks.filter(t => !t.done && !!t.due).length,
+    all: tasks.filter(t => !t.done).length,
+    done: tasks.filter(t => t.done).length,
+  };
+
+  const dueText = (due: string | null) => {
+    if (!due) return null;
+    const [, m, d] = due.split('-');
+    return `${m}/${d}`;
+  };
+
+  const TaskRow = ({ t }: { t: Task }) => {
+    const stepDone = t.steps.filter(s => s.done).length;
+    const overdue = !!t.due && t.due < today() && !t.done;
+
+    return (
+      <button
+        className={`msTaskRow ${selectedId === t.id ? 'selected' : ''} ${t.done ? 'done' : ''}`}
+        onClick={() => setSelectedId(t.id)}
+      >
+        <span
+          className={`msCheck ${t.done ? 'checked' : ''}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            complete(t);
+          }}
+        />
+        <span className="msTaskMain">
+          <span className="msTaskTitle">{t.title}</span>
+          <span className="msTaskMeta">
+            {lists.find(l => l.id === t.listId)?.name ?? 'Inbox'}
+            {t.due && <span className={overdue ? 'overdue' : ''}> · Due {dueText(t.due)}</span>}
+            {t.myDay && <span> · My Day</span>}
+            {t.steps.length > 0 && <span> · {stepDone}/{t.steps.length} steps</span>}
+          </span>
+        </span>
+        <span
+          className={`msStar ${t.important ? 'on' : ''}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            patch(t.id, { important: !t.important });
+          }}
+        >
+          ★
+        </span>
+      </button>
+    );
+  };
 
   return (
-    <section className="f2todo card">
-      <aside className="rail2">
-        {([['myday', 'My Day'], ['important', 'Important'], ['planned', 'Planned'], ['all', 'All'], ['done', 'Completed']] as [string, string][]).map(([id, label]) => (
-          <button key={id} className={`railBtn ${view === id ? 'on' : ''}`} onClick={() => setView(id)}>
-            {label}
-            {id === 'myday' && open.filter(t => t.myDay).length > 0 && <span className="railCount">{open.filter(t => t.myDay).length}</span>}
-            {id === 'important' && open.filter(t => t.important).length > 0 && <span className="railCount">{open.filter(t => t.important).length}</span>}
-          </button>
-        ))}
-        <div className="railLabel">LISTS</div>
-        {lists.map(l => (
-          <button key={l.id} className={`railBtn ${view === l.id ? 'on' : ''}`} onClick={() => setView(l.id)}>
-            <span className="dot" style={{ backgroundColor: l.color }} />{l.name}
-            {open.filter(t => t.listId === l.id).length > 0 && <span className="railCount">{open.filter(t => t.listId === l.id).length}</span>}
-          </button>
-        ))}
-        <form onSubmit={addList} className="railAdd"><input placeholder="New list..." value={newList} onChange={e => setNewList(e.target.value)} /></form>
-      </aside>
-      <div className="listPane">
-        <div className="row1">
-          <span className="viewTitle">{activeName}</span>
-          <input className="search" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
+    <div className="msTodo">
+      <aside className="msSidebar">
+        <div className="msSideBlock">
+          {([
+            ['myday', 'My Day', smartCount.myday],
+            ['important', 'Important', smartCount.important],
+            ['planned', 'Planned', smartCount.planned],
+            ['all', 'All', smartCount.all],
+            ['done', 'Completed', smartCount.done],
+          ] as [string, string, number][]).map(([id, label, count]) => (
+            <button key={id} className={`msNavItem ${view === id ? 'on' : ''}`} onClick={() => setView(id)}>
+              <span>{label}</span>
+              {count > 0 && <b>{count}</b>}
+            </button>
+          ))}
         </div>
+
+        <div className="msSideLabel">Lists</div>
+
+        <div className="msSideBlock">
+          {lists.map(l => {
+            const count = tasks.filter(t => !t.done && t.listId === l.id).length;
+            return (
+              <button key={l.id} className={`msNavItem ${view === l.id ? 'on' : ''}`} onClick={() => setView(l.id)}>
+                <span className="msListName">
+                  <i style={{ backgroundColor: l.color }} />
+                  {l.name}
+                </span>
+                {count > 0 && <b>{count}</b>}
+              </button>
+            );
+          })}
+        </div>
+
+        <form className="msNewList" onSubmit={addList}>
+          <input value={newList} onChange={e => setNewList(e.target.value)} placeholder="New list" />
+        </form>
+      </aside>
+
+      <main className="msList">
+        <header className="msListHeader">
+          <div>
+            <h2>{viewTitle}</h2>
+            <p>{viewSubtitle}</p>
+          </div>
+          <input className="msSearch" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search" />
+        </header>
+
         {view !== 'done' && (
-          <form className="quickAdd" onSubmit={addTask}>
-            <span className="qaPlus">+</span>
-            <input ref={addRef} placeholder="Add a task... (Enter saves, N jumps here)" value={newTask} onChange={e => setNewTask(e.target.value)} />
+          <form className="msAddTask" onSubmit={addTask}>
+            <span>+</span>
+            <input ref={addRef} value={newTask} onChange={e => setNewTask(e.target.value)} placeholder="Add a task" />
           </form>
         )}
-        {visible.length === 0 && <p className="hint">Nothing here. Add something small.</p>}
-        {visible.map(t => (
-          <div key={t.id} className={`tItem ${t.done ? 'done' : ''} ${completing.includes(t.id) ? 'completing' : ''}`}>
-            <div className="tRow">
-              <button className={`check ${t.done ? 'filled' : ''}`} onClick={() => complete(t)} />
-              <span className="tTitle" onClick={() => setOpenTask(openTask === t.id ? null : t.id)}>{t.title}</span>
-              {t.important && <span className="flagOn">★</span>}
-              {t.myDay && <span className="sunOn">☀</span>}
-              {t.due && <span className={`due ${t.due < today() && !t.done ? 'over' : ''}`}>{t.due.slice(5)}</span>}
-              {t.steps.length > 0 && <span className="stepsBadge">{t.steps.filter(s => s.done).length}/{t.steps.length}</span>}
-              <button className="chev" onClick={() => setOpenTask(openTask === t.id ? null : t.id)}>{openTask === t.id ? '−' : '+'}</button>
+
+        <section className="msTasks">
+          {openTasks.length === 0 && doneTasks.length === 0 && (
+            <div className="msEmpty">
+              <span>No tasks here.</span>
+              <p>Press N or use the add box to capture something quickly.</p>
             </div>
-            {openTask === t.id && (
-              <div className="tExpand">
-                <textarea placeholder="Notes..." value={t.notes} onChange={e => patch(t.id, { notes: e.target.value })} />
-                <div className="tMeta">
-                  <label>Due <input type="date" value={t.due ?? ''} onChange={e => patch(t.id, { due: e.target.value || null })} /></label>
-                  <button className={`starBtn ${t.important ? 'on' : ''}`} onClick={() => patch(t.id, { important: !t.important })}>★ Important</button>
-                  <button className={`sunBtn ${t.myDay ? 'on' : ''}`} onClick={() => patch(t.id, { myDay: !t.myDay })}>☀ My Day</button>
-                  <button className="btn ghost small" onClick={() => setTasks(ts => ts.filter(x => x.id !== t.id))}>Delete</button>
-                </div>
-                <div className="stepsList">
-                  {t.steps.map(s => (
-                    <div key={s.id} className="stepRow">
-                      <button className={`check tiny ${s.done ? 'filled' : ''}`} onClick={() => patch(t.id, { steps: t.steps.map(x => x.id === s.id ? { ...x, done: !x.done } : x) })} />
-                      <span className={s.done ? 'stepDone' : ''}>{s.text}</span>
-                    </div>
-                  ))}
-                  <form className="stepAdd" onSubmit={e => { e.preventDefault(); if (!newStep.trim()) return; patch(t.id, { steps: [...t.steps, { id: uid(), text: newStep.trim(), done: false }] }); setNewStep(''); }}>
-                    <input placeholder="Add a step..." value={newStep} onChange={e => setNewStep(e.target.value)} />
-                  </form>
-                </div>
-              </div>
-            )}
+          )}
+
+          {openTasks.map(t => <TaskRow key={t.id} t={t} />)}
+
+          {view !== 'done' && doneTasks.length > 0 && (
+            <details className="msCompleted">
+              <summary>Completed · {doneTasks.length}</summary>
+              {doneTasks.map(t => <TaskRow key={t.id} t={t} />)}
+            </details>
+          )}
+
+          {view === 'done' && doneTasks.map(t => <TaskRow key={t.id} t={t} />)}
+        </section>
+      </main>
+
+      <aside className={`msDetail ${selected ? 'open' : ''}`}>
+        {!selected ? (
+          <div className="msNoSelection">
+            <span>Select a task</span>
+            <p>Details, steps, notes, dates, and list controls appear here.</p>
           </div>
-        ))}
-      </div>
-    </section>
+        ) : (
+          <>
+            <div className="msDetailTop">
+              <button className={`msCheck big ${selected.done ? 'checked' : ''}`} onClick={() => complete(selected)} />
+              <input
+                className="msTitleInput"
+                value={selected.title}
+                onChange={e => patch(selected.id, { title: e.target.value })}
+              />
+              <button className={`msStar big ${selected.important ? 'on' : ''}`} onClick={() => patch(selected.id, { important: !selected.important })}>★</button>
+            </div>
+
+            <form className="msStepAdd" onSubmit={addStep}>
+              <span>+</span>
+              <input value={newStep} onChange={e => setNewStep(e.target.value)} placeholder="Add step" />
+            </form>
+
+            <div className="msSteps">
+              {selected.steps.map(s => (
+                <div key={s.id} className="msStep">
+                  <button
+                    className={`msCheck small ${s.done ? 'checked' : ''}`}
+                    onClick={() => patch(selected.id, {
+                      steps: selected.steps.map(x => x.id === s.id ? { ...x, done: !x.done } : x),
+                    })}
+                  />
+                  <span className={s.done ? 'done' : ''}>{s.text}</span>
+                  <button
+                    className="msTinyDelete"
+                    onClick={() => patch(selected.id, { steps: selected.steps.filter(x => x.id !== s.id) })}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="msDetailActions">
+              <button className={selected.myDay ? 'on' : ''} onClick={() => patch(selected.id, { myDay: !selected.myDay })}>
+                {selected.myDay ? 'Added to My Day' : 'Add to My Day'}
+              </button>
+
+              <label>
+                Due date
+                <input type="date" value={selected.due ?? ''} onChange={e => patch(selected.id, { due: e.target.value || null })} />
+              </label>
+
+              <label>
+                List
+                <select value={selected.listId} onChange={e => patch(selected.id, { listId: e.target.value })}>
+                  {lists.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
+              </label>
+            </div>
+
+            <textarea
+              className="msNotes"
+              value={selected.notes}
+              onChange={e => patch(selected.id, { notes: e.target.value })}
+              placeholder="Add notes"
+            />
+
+            <div className="msDetailFooter">
+              <span>Created {new Date(selected.createdAt).toLocaleDateString()}</span>
+              <button onClick={() => deleteTask(selected.id)}>Delete task</button>
+            </div>
+          </>
+        )}
+      </aside>
+    </div>
   );
 }
 
