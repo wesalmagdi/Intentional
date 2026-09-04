@@ -1589,6 +1589,7 @@ export default function App() {
         {nav === 'revisit' && <RevisitView discoveries={discoveries} onKeep={addDiscovery} />}
       </main>
 
+      <div className="dockHot" />
       <nav className="dock">
         {NAV.map(([id, label, icon]) => (
           <button key={id} className={`dockBtn ${nav === id ? 'on' : ''}`} onClick={() => { setNav(id); setChallenge(null); setReflect(null); }}>

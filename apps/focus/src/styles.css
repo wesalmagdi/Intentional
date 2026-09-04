@@ -1158,3 +1158,40 @@ body{background-image:radial-gradient(rgba(255,159,182,.13) 1.6px,transparent 1.
   .ringWrap svg{width:160px;height:160px}
   .ringTime{font-size:28px}
 }
+
+/* ===== auto-hide dock (linux style) ===== */
+.dockHot{position:fixed;bottom:0;left:0;right:0;height:12px;z-index:29}
+.dockHot::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:64px;height:4px;border-radius:2px;background:rgba(255,159,182,.55);transition:width .2s}
+.dockHot:hover::after{width:120px}
+.dock{transform:translate(-50%,130%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.dockHot:hover + .dock,.dock:hover,.dock:focus-within{transform:translate(-50%,0)}
+.main2{padding:26px 20px 56px}
+
+/* ===== brighter, bigger timer ===== */
+.darkView{
+  max-width:680px;
+  padding:30px 24px;gap:14px;
+  background:
+    radial-gradient(420px 260px at 20% 0%, rgba(255,255,255,.14), transparent 60%),
+    radial-gradient(500px 300px at 85% 100%, rgba(255,214,160,.22), transparent 60%),
+    linear-gradient(165deg,#413A6E 0%,#6A4E8C 45%,#A05C7E 75%,#D08A6E 100%);
+  border:2px solid rgba(255,255,255,.28);
+  box-shadow:0 24px 70px rgba(106,78,140,.4);
+}
+.ringWrap svg{width:250px;height:250px}
+.ringTime{font-size:42px}
+.darkTitle{font-size:24px}
+.ringWrap svg circle:first-child{stroke:rgba(255,255,255,.2)}
+.ringWrap svg circle:last-child{stroke:#FFD9A0;filter:drop-shadow(0 0 12px rgba(255,217,160,.6))}
+.ringSub{color:rgba(255,255,255,.6)}
+.darkCopy{color:rgba(255,255,255,.75)}
+@media (max-height:900px){
+  .darkView{padding:22px 20px;gap:12px}
+  .ringWrap svg{width:224px;height:224px}
+  .ringTime{font-size:38px}
+}
+@media (max-height:780px){
+  .ringWrap svg{width:200px;height:200px}
+  .darkTitle{font-size:21px}
+  .darkCopy{display:none}
+}
