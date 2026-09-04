@@ -1354,19 +1354,168 @@ function NoticeView({ onKeep }: { onKeep: (d: Discovery) => void }) {
 }
 
 // ---------- Choose / ZoomOut ----------
+const CHOOSE_DECK = ['Deep work', 'Health & movement', 'Family', 'Friends', 'Learning', 'Rest', 'Nature', 'Reading', 'Creating', 'Cooking', 'Music', 'Walking', 'Journaling', 'Money matters', 'Home & order', 'Quiet time', 'Screen time', 'News', 'Social media', 'Email', 'Meetings', 'Worrying', 'Perfectionism', 'People-pleasing'];
+type Bin = 'nourish' | 'trim' | 'rest';
+const BINS: { id: Bin; label: string; sub: string; icon: string; color: string }[] = [
+  { id: 'nourish', label: 'Nourish', sub: 'more of this', icon: 'leaf', color: '#3DB478' },
+  { id: 'trim', label: 'Trim', sub: 'less of this', icon: 'scissors', color: '#E86A6A' },
+  { id: 'rest', label: 'Rest', sub: 'not today', icon: 'moon', color: '#9F7BFF' },
+];
+
 function ChooseView({ onKeep }: { onKeep: (d: Discovery) => void }) {
-  const [more, setMore] = useState(''); const [less, setLess] = useState('');
-  function save() {
-    if (!more.trim() && !less.trim()) return;
-    onKeep({ id: uid(), category: 'Choose', prompt: 'What deserves your attention today?', findings: { attention: more.trim(), setdown: less.trim() }, createdAt: new Date().toISOString() });
-    setMore(''); setLess('');
+  const [deck, setDeck] = useState<string[]>(CHOOSE_DECK);
+  const [bins, setBins] = useState<Record<Bin, string[]>>({ nourish: [], trim: [], rest: [] });
+  const [hearts, setHearts] = useState<Record<string, number>>({});
+  const [one, setOne] = useState<string | null>(null);
+  const [step, setStep] = useState<'sort' | 'weigh' | 'one' | 'done'>('sort');
+  const [custom, setCustom] = useState('');
+  const [burst, setBurst] = useState(0);
+  const [discoveries] = useStored<Discovery[]>('it.discoveries', []);
+  const lastChoose = discoveries.find(d => d.category === 'Choose');
+
+  const assign = (card: string, bin: Bin) => {
+    setBins(b => ({ ...b, [bin]: [...b[bin], card] }));
+    setDeck(d => d.filter(x => x !== card));
+  };
+  const unassign = (card: string, bin: Bin) => {
+    setBins(b => ({ ...b, [bin]: b[bin].filter(x => x !== card) }));
+    setDeck(d => [...d, card]);
+  };
+  const addCustom = (e: React.FormEvent) => {
+    e.preventDefault();
+    const c = custom.trim();
+    if (!c) return;
+    setDeck(d => (d.includes(c) ? d : [...d, c]));
+    setCustom('');
+  };
+
+  function seal() {
+    if (!one) return;
+    const nourish = bins.nourish.map(c => (hearts[c] ? `${c} ${'♥'.repeat(hearts[c])}` : c)).join(', ');
+    onKeep({
+      id: uid(), category: 'Choose', prompt: 'What deserves your attention today?',
+      findings: { one, nourish, trim: bins.trim.join(', ') || 'nothing', rest: bins.rest.join(', ') || 'nothing' },
+      createdAt: new Date().toISOString(),
+    });
+    setBurst(b => b + 1);
+    setStep('done');
   }
+
+  function reset() {
+    setStep('sort'); setBins({ nourish: [], trim: [], rest: [] }); setDeck(CHOOSE_DECK); setHearts({}); setOne(null);
+  }
+
   return (
-    <div className="narrow">
-      <h1 className="pageTitle">Attention is a choice.</h1>
-      <label className="fld">What deserves more of you?<textarea value={more} onChange={e => setMore(e.target.value)} /></label>
-      <label className="fld">What deserves less of you?<textarea value={less} onChange={e => setLess(e.target.value)} /></label>
-      <div className="btnRow"><button className="btn" onClick={save}>Keep this.</button></div>
+    <div className="narrow" style={{ maxWidth: 860 }}>
+      <h1 className="pageTitle">Choose</h1>
+      {lastChoose?.findings?.one && step !== 'done' && (
+        <p className="modeDesc">last time, your one thing was "{lastChoose.findings.one}"</p>
+      )}
+
+      {step === 'sort' && (
+        <>
+          <p className="modeDesc">sort today's deck into three gardens. attention is a choice.</p>
+          <div className="binRow">
+            {BINS.map(b => (
+              <div key={b.id} className="binZone" style={{ borderColor: b.color }}>
+                <div className="binHead" style={{ color: b.color }}><Icon name={b.icon} /> {b.label} <span className="binSub">{b.sub}</span></div>
+                <div className="binChips">
+                  {bins[b.id].map(c => (
+                    <button key={c} className="binChip" onClick={() => unassign(c, b.id)} title="put back">{c} ×</button>
+                  ))}
+                  {bins[b.id].length === 0 && <span className="hint" style={{ margin: 0 }}>nothing yet...</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+          <form className="quickAdd" onSubmit={addCustom}><span className="qaPlus">+</span><input placeholder="add your own card..." value={custom} onChange={e => setCustom(e.target.value)} /></form>
+          <div className="cardFan">
+            {deck.map(c => {
+              const h = hashN(c);
+              return (
+                <div key={c} className="chCard" style={{ transform: `rotate(${(h % 5) - 2}deg)`, background: WHEEL_COLORS[h % WHEEL_COLORS.length] }}>
+                  <span className="chName">{c}</span>
+                  <div className="chBtns">
+                    {BINS.map(b => (
+                      <button key={b.id} className="chBtn" style={{ color: b.color }} title={b.label} onClick={() => assign(c, b.id)}><Icon name={b.icon} /></button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            {deck.length === 0 && <p className="hint">deck cleared!</p>}
+          </div>
+          <div className="btnRow center">
+            <button className="btn" disabled={bins.nourish.length === 0} onClick={() => setStep('weigh')}>Continue · weigh what nourishes</button>
+          </div>
+        </>
+      )}
+
+      {step === 'weigh' && (
+        <>
+          <p className="modeDesc">attention is finite. give 1-3 hearts to what matters most.</p>
+          <div className="weighList">
+            {bins.nourish.map(c => (
+              <div key={c} className="weighRow">
+                <span className="weighName">{c}</span>
+                <div className="heartRow">
+                  {[1, 2, 3].map(n => (
+                    <button key={n} className={`heartBtn ${(hearts[c] ?? 0) >= n ? 'on' : ''}`}
+                      onClick={() => setHearts(h => ({ ...h, [c]: (h[c] ?? 0) === n ? n - 1 : n }))}>♥</button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="btnRow center">
+            <button className="btn ghost" onClick={() => setStep('sort')}>Back</button>
+            <button className="btn" onClick={() => setStep('one')}>Continue · choose the one</button>
+          </div>
+        </>
+      )}
+
+      {step === 'one' && (
+        <>
+          <p className="modeDesc">if everything is important, nothing is. pick the one thing.</p>
+          <div className="onePick">
+            {bins.nourish.map(c => (
+              <button key={c} className={`oneCard ${one === c ? 'on' : ''}`} onClick={() => setOne(c)}>
+                <span>{c}</span>
+                {(hearts[c] ?? 0) > 0 && <span className="oneHearts">{'♥'.repeat(hearts[c])}</span>}
+              </button>
+            ))}
+          </div>
+          {one && (
+            <div className="oneReveal">
+              <span className="eyebrow">TODAY'S ONE THING</span>
+              <p className="oneBig">{one}</p>
+            </div>
+          )}
+          <div className="btnRow center">
+            <button className="btn ghost" onClick={() => setStep('weigh')}>Back</button>
+            <button className="btn" disabled={!one} onClick={seal}>Seal today's choice</button>
+          </div>
+        </>
+      )}
+
+      {step === 'done' && (
+        <div className="doneWrap">
+          {burst > 0 && (
+            <span className="confetti" key={burst}>
+              {Array.from({ length: 16 }).map((_, i) => {
+                const h = hashN('ch' + burst + '_' + i);
+                return <i key={i} style={{ left: `${6 + (h % 88)}%`, background: WHEEL_COLORS[h % WHEEL_COLORS.length], animationDelay: `${(h % 40) / 100}s`, transform: `rotate(${h % 360}deg)` }} />;
+              })}
+            </span>
+          )}
+          <span className="eyebrow">SEALED</span>
+          <p className="oneBig">{one}</p>
+          <p className="modeDesc">nourish: {bins.nourish.join(', ')} · trim: {bins.trim.join(', ') || 'nothing'} · resting: {bins.rest.join(', ') || 'nothing'}</p>
+          <div className="btnRow center">
+            <button className="btn ghost" onClick={reset}>Choose again</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1478,6 +1627,9 @@ const ICON_PATHS: Record<string, string> = {
   refresh: 'M23 4v6h-6 M1 20v-6h6 M4 9a8 8 0 0 1 13-4l6 5 M20 15a8 8 0 0 1-13 4l-6-5',
   download: 'M12 3v12 M6 11l6 6 6-6 M4 21h16',
   upload: 'M12 21V9 M6 13l6-6 6 6 M4 3h16',
+  scissors: 'M6 6m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0 M6 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0 M20 4 8.12 15.88 M14.47 14.48 20 20 M8.12 9.12 12 13',
+  moon: 'M20 14A8.5 8.5 0 1 1 10 3.5 7 7 0 0 0 20 14z',
+  heart: 'M12 21s-7-4.6-9.5-9C.6 8.6 2.6 5 6 5c2 0 3.2 1 4 2.2C10.8 6 12 5 14 5c3.4 0 5.4 3.6 3.5 7C19 16.4 12 21 12 21z',
 };
 function Icon({ name }: { name: string }) {
   return (
