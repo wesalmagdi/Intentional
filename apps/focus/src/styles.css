@@ -284,3 +284,42 @@ input, textarea { color-scheme: dark; }
 .metaBtn:hover{background:rgba(255,255,255,.1)}
 .metaBtn.on{background:rgba(227,169,92,.15);border-color:rgba(227,169,92,.4);color:var(--gold)}
 .metaBtn.danger{color:var(--danger);border-color:rgba(224,133,115,.3)}
+.bigTreeCard{display:flex;flex-direction:column;gap:16px;align-items:center}
+.bigTreeWrap{display:flex;flex-direction:column;align-items:center;gap:20px}
+.bigTreeSvg{filter:drop-shadow(0 8px 30px rgba(143,203,139,.3))}
+.treeStats{display:flex;gap:24px}
+.treeStat{display:flex;flex-direction:column;align-items:center;gap:3px}
+.treeStat b{font-size:28px;color:var(--gold)}
+.treeStat span{font-size:12px;color:var(--muted)}
+.progStats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px}
+.statCard.big{min-width:auto}
+.heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,13px);gap:3px;margin-top:14px;overflow-x:auto;padding-bottom:8px}
+.hCell{width:13px;height:13px;border-radius:3px;transition:transform .12s}
+.hCell:hover{transform:scale(1.25)}
+.tasksWrap{display:flex;gap:20px;align-items:flex-start}
+.rail2.big{width:220px;min-height:500px}
+.railSection{margin-bottom:20px}
+.tasksPane{flex:1;display:flex;flex-direction:column;gap:16px}
+.tasksHeader{display:flex;justify-content:space-between;align-items:center}
+.tasksTitle{font-family:var(--serif);font-size:28px;margin:0;color:var(--text)}
+.quickAdd.big{padding:14px 18px}
+.hint.big{font-size:14px;padding:20px 0}
+.taskGrid{display:grid;gap:12px}
+.taskCard{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:14px;padding:16px;transition:all .2s;cursor:pointer;animation:slideIn .25s ease}
+.taskCard:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3);border-color:var(--line2)}
+.taskCard.completing{animation:completeOut .48s ease forwards}
+.taskTop{display:flex;align-items:center;gap:12px}
+.taskTitle{flex:1;font-size:16px;font-weight:500;color:var(--text)}
+.taskCard.done .taskTitle{text-decoration:line-through;color:var(--muted)}
+.taskBadges{display:flex;gap:6px;margin-top:8px}
+.badge{font-size:11px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.08);color:var(--text2)}
+.badge.gold{background:rgba(227,169,92,.15);color:var(--gold)}
+.badge.sun{background:rgba(232,193,90,.15);color:#E8C15A}
+.badge.danger{background:rgba(224,133,115,.15);color:var(--danger)}
+.taskExpand{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.taskExpand textarea{background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:13px;min-height:70px;outline:none;resize:vertical;color:var(--text);font-family:var(--sans)}
+.taskMeta{display:flex;gap:8px;flex-wrap:wrap}
+.metaBtn{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--text2);border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;transition:all .15s}
+.metaBtn:hover{background:rgba(255,255,255,.1)}
+.metaBtn.on{background:rgba(227,169,92,.15);border-color:rgba(227,169,92,.4);color:var(--gold)}
+.metaBtn.danger{color:var(--danger);border-color:rgba(224,133,115,.3)}
