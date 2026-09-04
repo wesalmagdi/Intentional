@@ -92,6 +92,7 @@ function HeroTree({ sp, growth, size = 150, dead }: { sp: string; growth: number
   const c = dead ? '#A39E93' : s.color;
   const g = Math.max(0.14, growth);
   const top = 92 - 52 * g;
+  const fy = 92 - 58 * g;
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" className={dead ? 'treeDead' : 'treeSway'}>
       <ellipse cx={50} cy={93} rx={24} ry={4} fill="rgba(0,0,0,0.25)" />
@@ -115,6 +116,21 @@ function HeroTree({ sp, growth, size = 150, dead }: { sp: string; growth: number
         </g>
       ) : (
         <ellipse cx={50} cy={92 - 62 * g} rx={14 * g} ry={20 * g} fill={c} />
+      )}
+      {dead ? (
+        <g>
+          <path d={`M43 ${fy - 1} l4 3 M47 ${fy - 1} l-4 3`} stroke="#5B4A63" strokeWidth={1.4} strokeLinecap="round" />
+          <path d={`M53 ${fy - 1} l4 3 M57 ${fy - 1} l-4 3`} stroke="#5B4A63" strokeWidth={1.4} strokeLinecap="round" />
+          <path d={`M46 ${fy + 6} Q50 ${fy + 4} 54 ${fy + 6}`} stroke="#5B4A63" strokeWidth={1.5} fill="none" strokeLinecap="round" />
+        </g>
+      ) : (
+        <g>
+          <circle cx={45} cy={fy} r={2.1} fill="#4A3B5C" />
+          <circle cx={55} cy={fy} r={2.1} fill="#4A3B5C" />
+          <path d={`M47 ${fy + 3} Q50 ${fy + 5.5} 53 ${fy + 3}`} stroke="#4A3B5C" strokeWidth={1.5} fill="none" strokeLinecap="round" />
+          <circle cx={40.5} cy={fy + 2.5} r={2.4} fill="#FF9FB6" opacity={0.75} />
+          <circle cx={59.5} cy={fy + 2.5} r={2.4} fill="#FF9FB6" opacity={0.75} />
+        </g>
       )}
     </svg>
   );
@@ -164,7 +180,7 @@ function Heatmap({ trees }: { trees: Tree[] }) {
   const start = new Date(); start.setDate(start.getDate() - (days - 1));
   const cells: { k: string; m: number }[] = [];
   for (let i = 0; i < days; i++) { const d = new Date(start); d.setDate(start.getDate() + i); const k = d.toISOString().slice(0, 10); cells.push({ k, m: per.get(k) ?? 0 }); }
-  const col = (m: number) => m === 0 ? 'rgba(255,255,255,0.06)' : m < 25 ? 'rgba(143,203,139,0.35)' : m < 60 ? 'rgba(143,203,139,0.6)' : m < 120 ? '#8FCB8B' : '#E3A95C';
+  const col = (m: number) => m === 0 ? '#F3EAF3' : m < 25 ? '#D8F0E2' : m < 60 ? '#A9E3C4' : m < 120 ? '#8FCB8B' : '#E3A95C';
   return <div className="heat">{cells.map(c => <span key={c.k} title={`${c.k} · ${c.m} min`} className="hCell" style={{ background: col(c.m) }} />)}</div>;
 }
 
@@ -223,8 +239,14 @@ function TasksPage({ lists, setLists, tasks, setTasks }: {
     setTasks(ts => ts.map(t => t.id === id ? { ...t, ...patch } : t));
   };
 
+  const [burstId, setBurstId] = useState<string | null>(null);
   const complete = (t: Task) => {
-    patch(t.id, { done: !t.done, completedAt: t.done ? null : Date.now() });
+    const nowDone = !t.done;
+    patch(t.id, { done: nowDone, completedAt: nowDone ? Date.now() : null });
+    if (nowDone) {
+      setBurstId(t.id);
+      window.setTimeout(() => setBurstId(b => (b === t.id ? null : b)), 700);
+    }
   };
 
   const addTask = (e: React.FormEvent) => {
@@ -316,13 +338,22 @@ function TasksPage({ lists, setLists, tasks, setTasks }: {
         className={`msTaskRow ${selectedId === t.id ? 'selected' : ''} ${t.done ? 'done' : ''}`}
         onClick={() => setSelectedId(t.id)}
       >
-        <span
-          className={`msCheck ${t.done ? 'checked' : ''}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            complete(t);
-          }}
-        />
+        <span className="checkWrap">
+          {burstId === t.id && (
+            <span className="sparkles">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <i key={i} className="spk" style={{ '--d': `${i * 60}deg` } as React.CSSProperties} />
+              ))}
+            </span>
+          )}
+          <span
+            className={`msCheck ${t.done ? 'checked' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              complete(t);
+            }}
+          />
+        </span>
         <span className="msTaskMain">
           <span className="msTaskTitle">{t.title}</span>
           <span className="msTaskMeta">
@@ -404,8 +435,8 @@ function TasksPage({ lists, setLists, tasks, setTasks }: {
         <section className="msTasks">
           {openTasks.length === 0 && doneTasks.length === 0 && (
             <div className="msEmpty">
-              <span>No tasks here.</span>
-              <p>Press N or use the add box to capture something quickly.</p>
+              <span>( ᴗ ) all clear!</span>
+              <p>press N or add below to catch a tiny task~</p>
             </div>
           )}
 
@@ -561,7 +592,7 @@ function PlantPage({ session, plant, giveUp, trees, coins, breakOffer, setBreakO
             <div className="growClock">{fmtT(session.left)}</div>
             <div className="liveBar"><div className="liveFill" style={{ width: `${(growth * 100).toFixed(1)}%`, transition: 'width 1s linear' }} /></div>
             <p className="hint">Stay. It is growing.</p>
-            <button className="linkBtn danger" onClick={giveUp}>Give up — the tree dies</button>
+            <button className="linkBtn danger" onClick={giveUp}>give up (the tree wilts)</button>
           </div>
         )}
       </section>
@@ -589,7 +620,7 @@ function ForestPage({ trees, coins }: { trees: Tree[]; coins: number }) {
           <span className="hint" style={{ margin: 0 }}>{alive.length} grown · {deadN} withered</span>
         </div>
         <div className="garden big">
-          {trees.length === 0 && <p className="hint">No trees yet. Plant your first on the Plant page.</p>}
+          {trees.length === 0 && <p className="hint">no trees yet... plant your first seed on the Plant page ( ᴗ )</p>}
           {[...trees].reverse().map(t => {
             const h = hashN(t.id);
             return (
@@ -1004,7 +1035,7 @@ function JTimeline({ entries }: { entries: Entry[] }) {
           {allTags.map(t => <button key={t} className={`chip ${tag === t ? 'on' : ''}`} onClick={() => setTag(tag === t ? null : t)}>{t}</button>)}
         </div>
       )}
-      {filtered.length === 0 && <p className="hint">Nothing written yet.</p>}
+      {filtered.length === 0 && <p className="hint">nothing written yet... your page is waiting ( ᴗ )</p>}
       {groups.map(g => (
         <div key={g.label} className="jMonth">
           <span className="jMonthLabel">{g.label}</span>
@@ -1051,7 +1082,7 @@ function JInsights({ entries }: { entries: Entry[] }) {
   entries.forEach(e => { const k = new Date(e.createdAt).toISOString().slice(0, 10); per.set(k, (per.get(k) ?? 0) + wordsOf(e.body)); });
   const cells: { k: string; w: number }[] = [];
   for (let i = 0; i < days; i++) { const d = new Date(start); d.setDate(start.getDate() + i); const k = d.toISOString().slice(0, 10); cells.push({ k, w: per.get(k) ?? 0 }); }
-  const col = (w: number) => w === 0 ? 'rgba(255,255,255,0.06)' : w < 80 ? 'rgba(143,203,139,0.35)' : w < 200 ? 'rgba(143,203,139,0.6)' : w < 400 ? '#8FCB8B' : '#E3A95C';
+  const col = (w: number) => w === 0 ? '#F3EAF3' : w < 80 ? '#D8F0E2' : w < 200 ? '#A9E3C4' : w < 400 ? '#8FCB8B' : '#E3A95C';
 
   return (
     <div className="jInsights">
@@ -1339,7 +1370,7 @@ export default function App() {
   return (
     <div className="shell">
       <aside className="side">
-        <span className="sideBrand">Intentional</span>
+        <span className="sideBrand"><svg className="mascot" width="26" height="26" viewBox="0 0 40 40"><circle cx="20" cy="22" r="14" fill="#FFD9E6" /><circle cx="15" cy="21" r="1.8" fill="#4A3B5C" /><circle cx="25" cy="21" r="1.8" fill="#4A3B5C" /><path d="M17 25 Q20 28 23 25" stroke="#4A3B5C" strokeWidth="1.6" fill="none" strokeLinecap="round" /><circle cx="11.5" cy="24" r="2.4" fill="#FF9FB6" opacity=".7" /><circle cx="28.5" cy="24" r="2.4" fill="#FF9FB6" opacity=".7" /><path d="M20 8 Q23 3 28 6 Q24 11 20 8" fill="#8FD6A8" /></svg>Intentional</span>
         {([['home', 'Home'], ['focus', 'Focus'], ['learn', 'Learn'], ['journal', 'Journal'], ['notice', 'Notice'], ['choose', 'Choose'], ['zoom', 'Zoom Out'], ['library', 'Library'], ['revisit', 'Revisit']] as [string, string][]).map(([id, label]) => (
           <button key={id} className={`sideBtn ${nav === id ? 'on' : ''}`} onClick={() => { setNav(id); setChallenge(null); setReflect(null); }}>{label}</button>
         ))}
