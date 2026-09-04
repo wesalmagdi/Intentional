@@ -820,25 +820,35 @@ function LearnView({ onBegin }: { onBegin: (p: string, c: string) => void }) {
   const [angle, setAngle] = useState(0);
   const [burst, setBurst] = useState(0);
   const [own, setOwn] = useState('');
-  const total = Object.values(pools).reduce((a: number, p: string[]) => a + p.length, 0);
+  const [used, setUsed] = useStored<Record<string, string>>('it.learn.used', {});
+  const [started, setStarted] = useStored<string[]>('it.learn.started', []);
+  const [discoveries] = useStored<Discovery[]>('it.discoveries', []);
+  const todayStr = today();
+
+  const blocked = (q: string) => used[q] === todayStr || started.includes(q) || discoveries.some(d => d.prompt === q);
+  const avail = (cat: string) => (pools[cat] ?? []).filter(q => !blocked(q));
+  const totalAvail = keys.reduce((a, k) => a + avail(k).length, 0);
+  const total = (Object.values(pools) as string[][]).reduce((a, p) => a + p.length, 0);
 
   function spin() {
-    if (spinning) return;
+    if (spinning || totalAvail === 0) return;
     setSpinning(true);
     setCard(null);
+    const openCats = keys.filter(k => avail(k).length > 0);
+    const chosen = openCats[Math.floor(Math.random() * openCats.length)];
+    const idx = keys.indexOf(chosen);
     const n = keys.length;
     const seg = 360 / n;
-    const k = Math.floor(Math.random() * n);
-    const targetMod = (360 - (k * seg + seg / 2)) % 360;
+    const targetMod = (360 - (idx * seg + seg / 2)) % 360;
     const currentMod = ((angle % 360) + 360) % 360;
     let delta = 360 * 8 + (targetMod - currentMod);
     if (delta <= 360) delta += 360;
     setAngle(a => a + delta);
 
-    const allPool = (Object.values(pools) as string[][]).flat();
+    const allAvail = openCats.flatMap(c => avail(c));
     let cycle = 0;
     const doCycle = () => {
-      setCycleTxt(allPool[Math.floor(Math.random() * allPool.length)]);
+      setCycleTxt(allAvail[Math.floor(Math.random() * allAvail.length)]);
       tick();
       cycle++;
       if (cycle < 32) window.setTimeout(doCycle, 35 + Math.pow(cycle, 1.6) * 7);
@@ -846,15 +856,22 @@ function LearnView({ onBegin }: { onBegin: (p: string, c: string) => void }) {
     doCycle();
 
     window.setTimeout(() => {
-      const cat = keys[k];
-      const arr = pools[cat];
-      setCardCat(cat);
-      setCard(arr[Math.floor(Math.random() * arr.length)]);
+      const arr = avail(chosen);
+      const pickQ = arr[Math.floor(Math.random() * arr.length)];
+      setCardCat(chosen);
+      setCard(pickQ);
+      setUsed(u => ({ ...u, [pickQ]: todayStr }));
       setCycleTxt(null);
       setSpinning(false);
       setBurst(b => b + 1);
       chime();
     }, 4200);
+  }
+
+  function begin() {
+    if (!card || !cardCat) return;
+    setStarted(s => (s.includes(card) ? s : [...s, card]));
+    onBegin(card, cardCat);
   }
 
   return (
@@ -867,13 +884,13 @@ function LearnView({ onBegin }: { onBegin: (p: string, c: string) => void }) {
       </div>
       {mode !== 'own' ? (
         <>
-          <p className="modeDesc">{mode === 'topics' ? `small wonders from the everyday · ${total} in the deck` : `the big, strange, unanswerable ones · ${total} in the deck`}</p>
+          <p className="modeDesc">{mode === 'topics' ? `small wonders from the everyday` : `the big, strange, unanswerable ones`} · {totalAvail} fresh of {total} today</p>
           <div className="wheelWrap">
             <div className="wheelPointer" />
             <div className="wheel" style={{ transform: `rotate(${angle}deg)` }}>
               <svg viewBox="0 0 200 200">
                 {keys.map((k, i) => (
-                  <path key={k} d={segPath(i, keys.length)} fill={WHEEL_COLORS[i % WHEEL_COLORS.length]} stroke="#fff" strokeWidth={2} />
+                  <path key={k} d={segPath(i, keys.length)} fill={WHEEL_COLORS[i % WHEEL_COLORS.length]} stroke="#fff" strokeWidth={2} opacity={avail(k).length > 0 ? 1 : 0.35} />
                 ))}
                 <circle cx={100} cy={100} r={27} fill="#fff" />
                 <circle cx={92} cy={96} r={3} fill="#4A3B5C" />
@@ -894,12 +911,21 @@ function LearnView({ onBegin }: { onBegin: (p: string, c: string) => void }) {
           </div>
           <div className="spinCard">
             {cardCat && !spinning && card && <span className="eyebrow">{cardCat.toUpperCase()}</span>}
-            <p className={`spinText ${spinning ? 'spinBlur' : ''}`}>{spinning ? cycleTxt : (card ?? 'Ready.')}</p>
+            <p className={`spinText ${spinning ? 'spinBlur' : ''}`}>
+              {spinning ? cycleTxt : (card ?? (totalAvail === 0 ? 'the deck is resting~' : 'Ready.'))}
+            </p>
           </div>
-          <div className="btnRow center">
-            <button className="btn" onClick={spin} disabled={spinning}>{spinning ? 'Spinning...' : (card ? 'Spin again' : 'Spin the wheel')}</button>
-            <button className="btn ghost" disabled={!card || spinning} onClick={() => card && cardCat && onBegin(card, cardCat)}>Begin 10 minutes</button>
-          </div>
+          {totalAvail === 0 ? (
+            <div className="btnRow center">
+              <p className="modeDesc">everything fresh has been spun today. come back tomorrow, or</p>
+              <button className="btn ghost" onClick={() => setUsed({})}>reset today's spins</button>
+            </div>
+          ) : (
+            <div className="btnRow center">
+              <button className="btn" onClick={spin} disabled={spinning}>{spinning ? 'Spinning...' : (card ? 'Spin again' : 'Spin the wheel')}</button>
+              <button className="btn ghost" disabled={!card || spinning} onClick={begin}>Begin 10 minutes</button>
+            </div>
+          )}
         </>
       ) : (
         <>
