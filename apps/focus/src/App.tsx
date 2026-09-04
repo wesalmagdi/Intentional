@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 type Step = { id: string; text: string; done: boolean };
 type Task = { id: string; listId: string; title: string; notes: string; due: string | null; important: boolean; myDay: boolean; done: boolean; steps: Step[]; createdAt: number; completedAt: number | null };
 type List = { id: string; name: string; color: string };
+import { TOPIC_POOLS, DEEP_POOLS } from './pools';
 type Discovery = { id: string; category: string; prompt: string; findings: Record<string, string>; sources?: string; folderName?: string; createdAt: string };
 type Entry = { id: string; body: string; prompt?: string; createdAt: string; mood?: string; tags?: string[] };
 type Tree = { id: string; minutes: number; species: string; plantedAt: number; dead: boolean };
@@ -24,21 +25,6 @@ const SPECIES = [
   { id: 'oak', name: 'Oak', cost: 150, color: '#6B8F5A' },
   { id: 'birch', name: 'Birch', cost: 300, color: '#8FA3AD' },
 ];
-
-const TOPIC_POOLS: Record<string, string[]> = {
-  General: ['Why do we keep souvenirs?', 'What makes a room feel calm?', 'Why do we hum?', 'Why do queues form?', 'What is the oldest thing you own?'],
-  Everyday: ['Who invented the sandwich?', 'Why is coffee the default ritual?', 'Where does the weekend go?', 'What makes comfort food comforting?'],
-  Nature: ['How do birds know when to leave?', 'Why is the sea salty?', 'How do trees talk underground?', 'Where do butterflies winter?'],
-  Objects: ['Who decided the shape of a fork?', 'Why do clocks go clockwise?', 'How did the mirror change us?', 'Why is paper still here?'],
-  People: ['Why do we blush?', 'How did handshakes start?', 'Why do strangers help strangers?', 'How do accents form?'],
-};
-const DEEP_POOLS: Record<string, string[]> = {
-  Society: ['Why do civilizations collapse?', 'What makes a society trust itself?', 'Why does inequality keep returning?'],
-  Mind: ['Why do we dream?', 'Is attention the same as thought?', 'Why does time feel faster as we age?'],
-  Time: ['What did the printing press change quietly?', 'Which ideas spread faster than armies?', 'What will this decade be remembered for?'],
-  Meaning: ['What makes work feel meaningful?', 'Why do we keep old letters?', 'What is a quiet life worth?'],
-};
-const JOURNAL_PROMPTS = ['What have you been thinking about lately that you haven\'t said out loud?', 'What did you feel today that you usually skip past?', 'What are you carrying that isn\'t yours to carry?', 'What small thing went unnoticed today?'];
 
 let tickCtx: AudioContext | null = null;
 function tick() {
@@ -785,30 +771,60 @@ function FocusView() {
 }
 
 // ---------- Learn ----------
+const WHEEL_COLORS = ['#FFD9E6', '#D8F0E2', '#E6E0FF', '#FFF0D9', '#D9F3F6', '#FFE1E1', '#EAF7EF', '#F3EAF3', '#FFE9F1', '#DDEBFF', '#F6E3EE', '#E4F6D9'];
+function segPath(i: number, n: number) {
+  const a0 = ((i * 360) / n - 90) * (Math.PI / 180);
+  const a1 = (((i + 1) * 360) / n - 90) * (Math.PI / 180);
+  const r = 96;
+  return `M100 100 L${100 + r * Math.cos(a0)} ${100 + r * Math.sin(a0)} A${r} ${r} 0 0 1 ${100 + r * Math.cos(a1)} ${100 + r * Math.sin(a1)} Z`;
+}
+
 function LearnView({ onBegin }: { onBegin: (p: string, c: string) => void }) {
   const [mode, setMode] = useState<'topics' | 'deep' | 'own'>('topics');
-  const tKeys = Object.keys(TOPIC_POOLS); const dKeys = Object.keys(DEEP_POOLS);
-  const [tCat, setTCat] = useState(tKeys[0]); const [dCat, setDCat] = useState(dKeys[0]);
+  const pools = mode === 'deep' ? DEEP_POOLS : TOPIC_POOLS;
+  const keys = Object.keys(pools);
   const [card, setCard] = useState<string | null>(null);
-  const [spinTxt, setSpinTxt] = useState<string | null>(null);
+  const [cardCat, setCardCat] = useState<string | null>(null);
+  const [cycleTxt, setCycleTxt] = useState<string | null>(null);
   const [spinning, setSpinning] = useState(false);
+  const [angle, setAngle] = useState(0);
+  const [burst, setBurst] = useState(0);
   const [own, setOwn] = useState('');
-  const keys = mode === 'deep' ? dKeys : tKeys;
-  const cat = mode === 'deep' ? dCat : tCat;
-  const pool = (mode === 'deep' ? DEEP_POOLS[dCat] : TOPIC_POOLS[tCat]) ?? [];
+  const total = Object.values(pools).reduce((a: number, p: string[]) => a + p.length, 0);
 
   function spin() {
-    if (spinning || pool.length === 0) return;
+    if (spinning) return;
     setSpinning(true);
+    setCard(null);
+    const n = keys.length;
+    const seg = 360 / n;
+    const k = Math.floor(Math.random() * n);
+    const targetMod = (360 - (k * seg + seg / 2)) % 360;
+    const currentMod = ((angle % 360) + 360) % 360;
+    let delta = 360 * 5 + (targetMod - currentMod);
+    if (delta <= 360) delta += 360;
+    setAngle(a => a + delta);
+
+    const allPool = (Object.values(pools) as string[][]).flat();
     let cycle = 0;
     const doCycle = () => {
-      setSpinTxt(pool[Math.floor(Math.random() * pool.length)]);
+      setCycleTxt(allPool[Math.floor(Math.random() * allPool.length)]);
       tick();
       cycle++;
-      if (cycle >= 16) { setSpinTxt(null); setCard(pool[Math.floor(Math.random() * pool.length)]); setSpinning(false); return; }
-      window.setTimeout(doCycle, 25 + Math.pow(cycle, 1.8) * 8);
+      if (cycle < 22) window.setTimeout(doCycle, 40 + Math.pow(cycle, 1.7) * 6);
     };
     doCycle();
+
+    window.setTimeout(() => {
+      const cat = keys[k];
+      const arr = pools[cat];
+      setCardCat(cat);
+      setCard(arr[Math.floor(Math.random() * arr.length)]);
+      setCycleTxt(null);
+      setSpinning(false);
+      setBurst(b => b + 1);
+      chime();
+    }, 2650);
   }
 
   return (
@@ -816,25 +832,48 @@ function LearnView({ onBegin }: { onBegin: (p: string, c: string) => void }) {
       <h1 className="pageTitle">Learn</h1>
       <div className="tabs">
         {([['topics', 'Topics'], ['deep', 'Deep'], ['own', 'My own']] as ['topics' | 'deep' | 'own', string][]).map(([m, l]) => (
-          <button key={m} className={`tab ${mode === m ? 'on' : ''}`} onClick={() => { setMode(m); setCard(null); }}>{l}</button>
+          <button key={m} className={`tab ${mode === m ? 'on' : ''}`} onClick={() => { setMode(m); setCard(null); setCardCat(null); }}>{l}</button>
         ))}
       </div>
       {mode !== 'own' ? (
         <>
-          <p className="modeDesc">{mode === 'topics' ? 'Light curiosities. Follow the pull.' : 'Big questions. Honest search.'}</p>
-          <div className="chips">{keys.map(k => <button key={k} className={`chip ${cat === k ? 'on' : ''}`} onClick={() => { if (mode === 'deep') setDCat(k); else setTCat(k); setCard(null); }}>{k}</button>)}</div>
-          <div className="spinCard">
-            <span className="eyebrow">{cat.toUpperCase()}</span>
-            <p className="spinText">{spinning ? spinTxt : (card ?? 'Ready.')}</p>
+          <p className="modeDesc">{mode === 'topics' ? `light curiosities · ${total} in the deck` : `big questions · ${total} in the deck`}</p>
+          <div className="wheelWrap">
+            <div className="wheelPointer" />
+            <div className="wheel" style={{ transform: `rotate(${angle}deg)` }}>
+              <svg viewBox="0 0 200 200">
+                {keys.map((k, i) => (
+                  <path key={k} d={segPath(i, keys.length)} fill={WHEEL_COLORS[i % WHEEL_COLORS.length]} stroke="#fff" strokeWidth={2} />
+                ))}
+                <circle cx={100} cy={100} r={27} fill="#fff" />
+                <circle cx={92} cy={96} r={3} fill="#4A3B5C" />
+                <circle cx={108} cy={96} r={3} fill="#4A3B5C" />
+                <path d="M93 104 Q100 110 107 104" stroke="#4A3B5C" strokeWidth={2.4} fill="none" strokeLinecap="round" />
+                <circle cx={85} cy={102} r={3.4} fill="#FF9FB6" opacity={0.7} />
+                <circle cx={115} cy={102} r={3.4} fill="#FF9FB6" opacity={0.7} />
+              </svg>
+            </div>
+            {burst > 0 && !spinning && card && (
+              <span className="confetti" key={burst}>
+                {Array.from({ length: 16 }).map((_, i) => {
+                  const h = hashN('cf' + burst + '_' + i);
+                  return <i key={i} style={{ left: `${6 + (h % 88)}%`, background: WHEEL_COLORS[h % WHEEL_COLORS.length], animationDelay: `${(h % 40) / 100}s`, transform: `rotate(${h % 360}deg)` }} />;
+                })}
+              </span>
+            )}
           </div>
-          <div className="btnRow">
-            <button className="btn ghost" onClick={spin} disabled={spinning}>{spinning ? 'Spinning' : 'Spin'}</button>
-            <button className="btn" disabled={!card} onClick={() => card && onBegin(card, cat)}>Begin 10 minutes</button>
+          <div className="spinCard">
+            {cardCat && !spinning && card && <span className="eyebrow">{cardCat.toUpperCase()}</span>}
+            <p className={`spinText ${spinning ? 'spinBlur' : ''}`}>{spinning ? cycleTxt : (card ?? 'Ready.')}</p>
+          </div>
+          <div className="btnRow center">
+            <button className="btn" onClick={spin} disabled={spinning}>{spinning ? 'Spinning...' : (card ? 'Spin again' : 'Spin the wheel')}</button>
+            <button className="btn ghost" disabled={!card || spinning} onClick={() => card && cardCat && onBegin(card, cardCat)}>Begin 10 minutes</button>
           </div>
         </>
       ) : (
         <>
-          <p className="modeDesc">You bring the question.</p>
+          <p className="modeDesc">you bring the question.</p>
           <textarea className="bigInput" placeholder="Ask a question..." value={own} onChange={e => setOwn(e.target.value)} />
           <div className="btnRow"><button className="btn" disabled={!own.trim()} onClick={() => onBegin(own.trim(), 'Curiosity')}>Begin 10 minutes</button></div>
         </>
