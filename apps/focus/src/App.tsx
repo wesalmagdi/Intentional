@@ -851,8 +851,8 @@ function LearnView({ onBegin }: { onBegin: (p: string, c: string) => void }) {
       const el = performance.now() - t0;
       setCycleTxt(allAvail[Math.floor(Math.random() * allAvail.length)]);
       tick();
-      if (el < 4000) {
-        const p = el / 4000;
+      if (el < 4100) {
+        const p = el / 4100;
         window.setTimeout(doCycle, 45 + p * p * 320);
       }
     };
