@@ -846,12 +846,15 @@ function LearnView({ onBegin }: { onBegin: (p: string, c: string) => void }) {
     setAngle(a => a + delta);
 
     const allAvail = openCats.flatMap(c => avail(c));
-    let cycle = 0;
+    const t0 = performance.now();
     const doCycle = () => {
+      const el = performance.now() - t0;
       setCycleTxt(allAvail[Math.floor(Math.random() * allAvail.length)]);
       tick();
-      cycle++;
-      if (cycle < 32) window.setTimeout(doCycle, 35 + Math.pow(cycle, 1.6) * 7);
+      if (el < 4000) {
+        const p = el / 4000;
+        window.setTimeout(doCycle, 45 + p * p * 320);
+      }
     };
     doCycle();
 
@@ -1463,6 +1466,27 @@ function Deco() {
   );
 }
 
+const ICON_PATHS: Record<string, string> = {
+  home: 'M3 10.5 12 3l9 7.5V21h-6v-6h-6v6H3z',
+  leaf: 'M12 3C7 8 5 13 12 21c7-8 5-13 0-18z M12 9v8',
+  book: 'M4 4h7v16H6a2 2 0 0 0-2 2z M20 4h-7v16h5a2 2 0 0 1 2 2z',
+  pen: 'M12 20h9 M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z',
+  eye: 'M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+  fork: 'M6 3v6a6 6 0 0 0 12 0V3 M12 15v6',
+  globe: 'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0 M3 12h18 M12 3a15 15 0 0 1 0 18 M12 3a15 15 0 0 0 0 18',
+  mark: 'M6 3h12v18l-6-4-6 4z',
+  refresh: 'M23 4v6h-6 M1 20v-6h6 M4 9a8 8 0 0 1 13-4l6 5 M20 15a8 8 0 0 1-13 4l-6-5',
+  download: 'M12 3v12 M6 11l6 6 6-6 M4 21h16',
+  upload: 'M12 21V9 M6 13l6-6 6 6 M4 3h16',
+};
+function Icon({ name }: { name: string }) {
+  return (
+    <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d={ICON_PATHS[name] ?? ''} />
+    </svg>
+  );
+}
+
 // ---------- App shell ----------
 export default function App() {
   const [nav, setNav] = useState<string>('home');
@@ -1479,22 +1503,72 @@ export default function App() {
 
   const dateLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
+  function exportData() {
+    const data: Record<string, unknown> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)!;
+      if (k.startsWith('it.')) {
+        try { data[k] = JSON.parse(localStorage.getItem(k) ?? 'null'); } catch { data[k] = null; }
+      }
+    }
+    const blob = new Blob([JSON.stringify({ app: 'intentional', version: 1, exportedAt: new Date().toISOString(), data }, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `intentional-backup-${today()}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function importData(file: File) {
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const parsed = JSON.parse(String(r.result));
+        const data = (parsed && parsed.data) ? parsed.data : parsed;
+        Object.entries(data).forEach(([k, v]) => {
+          if (k.startsWith('it.')) localStorage.setItem(k, JSON.stringify(v));
+        });
+        window.location.reload();
+      } catch {
+        window.alert('that file did not look like an Intentional backup ( ᴗ )');
+      }
+    };
+    r.readAsText(file);
+  }
+
+  const NAV: [string, string, string][] = [
+    ['home', 'Home', 'home'], ['focus', 'Focus', 'leaf'], ['learn', 'Learn', 'book'],
+    ['journal', 'Journal', 'pen'], ['notice', 'Notice', 'eye'], ['choose', 'Choose', 'fork'],
+    ['zoom', 'Zoom Out', 'globe'], ['library', 'Library', 'mark'], ['revisit', 'Revisit', 'refresh'],
+  ];
+
   return (
-    <div className="shell"><Deco />
-      <aside className="side">
-        <span className="sideBrand"><svg className="mascot" width="26" height="26" viewBox="0 0 40 40"><circle cx="20" cy="22" r="14" fill="#FFD9E6" /><circle cx="15" cy="21" r="1.8" fill="#4A3B5C" /><circle cx="25" cy="21" r="1.8" fill="#4A3B5C" /><path d="M17 25 Q20 28 23 25" stroke="#4A3B5C" strokeWidth="1.6" fill="none" strokeLinecap="round" /><circle cx="11.5" cy="24" r="2.4" fill="#FF9FB6" opacity=".7" /><circle cx="28.5" cy="24" r="2.4" fill="#FF9FB6" opacity=".7" /><path d="M20 8 Q23 3 28 6 Q24 11 20 8" fill="#8FD6A8" /></svg>Intentional</span>
-        {([['home', 'Home'], ['focus', 'Focus'], ['learn', 'Learn'], ['journal', 'Journal'], ['notice', 'Notice'], ['choose', 'Choose'], ['zoom', 'Zoom Out'], ['library', 'Library'], ['revisit', 'Revisit']] as [string, string][]).map(([id, label]) => (
-          <button key={id} className={`sideBtn ${nav === id ? 'on' : ''}`} onClick={() => { setNav(id); setChallenge(null); setReflect(null); }}>{label}</button>
-        ))}
-      </aside>
-      <main className="main">
+    <div className="shell2">
+      <Deco />
+      <header className="topBar">
+        <span className="sideBrand">
+          <svg className="mascot" width="26" height="26" viewBox="0 0 40 40"><circle cx="20" cy="22" r="14" fill="#FFD9E6" /><circle cx="15" cy="21" r="1.8" fill="#4A3B5C" /><circle cx="25" cy="21" r="1.8" fill="#4A3B5C" /><path d="M17 25 Q20 28 23 25" stroke="#4A3B5C" strokeWidth="1.6" fill="none" strokeLinecap="round" /><circle cx="11.5" cy="24" r="2.4" fill="#FF9FB6" opacity=".7" /><circle cx="28.5" cy="24" r="2.4" fill="#FF9FB6" opacity=".7" /><path d="M20 8 Q23 3 28 6 Q24 11 20 8" fill="#8FD6A8" /></svg>
+          Intentional
+        </span>
+        <span className="topDate">{dateLabel}</span>
+        <div className="topActions">
+          <button className="iconBtn" title="Export backup" onClick={exportData}><Icon name="download" /></button>
+          <label className="iconBtn" title="Import backup">
+            <Icon name="upload" />
+            <input type="file" accept=".json,application/json" style={{ display: 'none' }}
+              onChange={e => { const f = e.target.files?.[0]; if (f) importData(f); }} />
+          </label>
+        </div>
+      </header>
+
+      <main className="main2">
         {savedFlash && <div className="flash">Kept.</div>}
         {nav === 'home' && (
           <div className="narrow">
             <span className="eyebrow">{dateLabel.toUpperCase()}</span>
             <h1 className="pageTitle">A quiet place to begin.</h1>
             <div className="homeGrid">
-              {([['focus', 'Focus', 'Plant a tree. Do the work.'], ['learn', 'Learn', 'A 10-minute search for what matters.'], ['journal', 'Journal', 'Think without performing.'], ['notice', 'Notice', 'One quiet minute.'], ['choose', 'Choose', 'Attention is a choice.'], ['zoom', 'Zoom Out', 'See it from further away.'], ['library', 'Library', 'What you have kept.'], ['revisit', 'Revisit', 'Meet your old mind.']] as [string, string, string][]).map(([id, t, s]) => (
+              {([['focus', 'Focus', 'Plant a tree. Do the work.'], ['learn', 'Learn', 'Spin a question, chase it for 10 minutes.'], ['journal', 'Journal', 'Think without performing.'], ['notice', 'Notice', 'One quiet minute.'], ['choose', 'Choose', 'Attention is a choice.'], ['zoom', 'Zoom Out', 'See it from further away.'], ['library', 'Library', 'What you have kept.'], ['revisit', 'Revisit', 'Meet your old mind.']] as [string, string, string][]).map(([id, t, s]) => (
                 <button key={id} className="homeCard" onClick={() => setNav(id)}>
                   <span className="homeTitle">{t}</span>
                   <span className="homeSub">{s}</span>
@@ -1514,6 +1588,15 @@ export default function App() {
         {nav === 'library' && <LibraryView discoveries={discoveries} />}
         {nav === 'revisit' && <RevisitView discoveries={discoveries} onKeep={addDiscovery} />}
       </main>
+
+      <nav className="dock">
+        {NAV.map(([id, label, icon]) => (
+          <button key={id} className={`dockBtn ${nav === id ? 'on' : ''}`} onClick={() => { setNav(id); setChallenge(null); setReflect(null); }}>
+            <Icon name={icon} />
+            <span>{label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }

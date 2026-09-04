@@ -1122,3 +1122,20 @@ body{background-image:radial-gradient(rgba(255,159,182,.13) 1.6px,transparent 1.
 .narrow .tabs{justify-content:center}
 .narrow .modeDesc{text-align:center}
 .narrow .btnRow{justify-content:center}
+
+/* ===== TOP BAR + DOCK NAV ===== */
+.shell2{min-height:100vh;position:relative;z-index:1}
+.topBar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;padding:12px 24px;background:rgba(255,255,255,.78);backdrop-filter:blur(16px);border-bottom:2px solid var(--line)}
+.topDate{flex:1;text-align:center;font-family:var(--serif);font-style:italic;font-size:15px;color:var(--text2)}
+@media(max-width:700px){.topDate{display:none}}
+.topActions{display:flex;gap:8px}
+.iconBtn{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:12px;border:2px solid var(--line);background:#fff;color:#E85D90;cursor:pointer;transition:all .15s}
+.iconBtn:hover{transform:translateY(-2px);border-color:#FF9FB6;box-shadow:0 6px 16px rgba(255,127,168,.2)}
+.iconBtn .ic{width:17px;height:17px}
+.main2{padding:36px 22px 140px;max-width:1180px;margin:0 auto}
+.dock{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:rgba(255,255,255,.88);backdrop-filter:blur(18px);border:2px solid var(--line);border-radius:999px;padding:8px 10px;box-shadow:0 18px 44px rgba(255,127,168,.28);z-index:30;max-width:96vw;overflow-x:auto}
+.dockBtn{display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:transparent;color:var(--text2);border-radius:16px;padding:7px 13px;cursor:pointer;font-size:10px;font-weight:800;transition:all .18s;flex-shrink:0}
+.dockBtn .ic{width:18px;height:18px}
+.dockBtn:hover{color:#E85D90;transform:translateY(-3px)}
+.dockBtn.on{background:linear-gradient(135deg,#FF9FB6,#FF7FA8);color:#fff;box-shadow:0 6px 18px rgba(255,127,168,.45);animation:dockPop .3s ease}
+@keyframes dockPop{0%{transform:scale(.9)}60%{transform:scale(1.07)}100%{transform:scale(1)}}
