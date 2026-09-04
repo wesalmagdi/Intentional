@@ -5,7 +5,7 @@ type Step = { id: string; text: string; done: boolean };
 type Task = { id: string; listId: string; title: string; notes: string; due: string | null; important: boolean; myDay: boolean; done: boolean; steps: Step[]; createdAt: number; completedAt: number | null };
 type List = { id: string; name: string; color: string };
 type Discovery = { id: string; category: string; prompt: string; findings: Record<string, string>; sources?: string; folderName?: string; createdAt: string };
-type Entry = { id: string; body: string; prompt?: string; createdAt: string };
+type Entry = { id: string; body: string; prompt?: string; createdAt: string; mood?: string; tags?: string[] };
 type Tree = { id: string; minutes: number; species: string; plantedAt: number; dead: boolean };
 
 const uid = () => String(Date.now() + Math.floor(Math.random() * 10000));
@@ -870,39 +870,249 @@ function ReflectView({ prompt, category, onSaved }: { prompt: string; category: 
 }
 
 // ---------- Journal ----------
-function JournalView() {
-  const [entries, setEntries] = useStored<Entry[]>('it.journal', []);
-  const [text, setText] = useState('');
+const JOURNAL_DECK = [
+  'What have you been thinking about lately that you haven\'t said out loud?',
+  'What did you feel today that you usually skip past?',
+  'What are you carrying that isn\'t yours to carry?',
+  'What small thing went unnoticed today?',
+  'What made you laugh recently?',
+  'What would you do today if you weren\'t afraid?',
+  'Who crossed your mind today, and why?',
+  'What did you learn the hard way this week?',
+  'What are you looking forward to?',
+  'What would make today feel complete?',
+  'What habit is quietly serving you?',
+  'What habit is quietly costing you?',
+  'Where did you feel most alive this month?',
+  'What do you want to remember a year from now?',
+];
+
+const MOODS = [
+  { id: 'radiant', name: 'Radiant', color: '#E8C15A', grad: 'radial-gradient(circle at 35% 30%, #FFEDB0, #E8C15A 55%, #A9713B)' },
+  { id: 'good', name: 'Good', color: '#8FCB8B', grad: 'radial-gradient(circle at 35% 30%, #D6F2CF, #8FCB8B 55%, #4E8A57)' },
+  { id: 'steady', name: 'Steady', color: '#6BA8C9', grad: 'radial-gradient(circle at 35% 30%, #D3EAF6, #6BA8C9 55%, #41708C)' },
+  { id: 'heavy', name: 'Heavy', color: '#9A7FD1', grad: 'radial-gradient(circle at 35% 30%, #E4D9F6, #9A7FD1 55%, #6A529B)' },
+  { id: 'stormy', name: 'Stormy', color: '#E08573', grad: 'radial-gradient(circle at 35% 30%, #F6D3CA, #E08573 55%, #A9503F)' },
+];
+const moodOf = (id?: string) => MOODS.find(m => m.id === id);
+const wordsOf = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0);
+
+function JWrite({ onSaved }: { onSaved: (e: Entry) => void }) {
+  const [draft, setDraft] = useStored<string>('it.journal.draft', '');
+  const [mood, setMood] = useState<string | null>(null);
+  const [tags, setTags] = useState('');
   const [prompt, setPrompt] = useState<string | null>(null);
-  const [viewing, setViewing] = useState<Entry | null>(null);
-  function keep() {
-    if (!text.trim()) return;
-    setEntries(es => [{ id: uid(), body: text.trim(), prompt: prompt ?? undefined, createdAt: new Date().toISOString() }, ...es]);
-    setText(''); setPrompt(null);
+  const [promptKey, setPromptKey] = useState(0);
+  const [kept, setKept] = useState(false);
+  const words = wordsOf(draft);
+
+  function shuffle() {
+    setPrompt(() => {
+      let n = JOURNAL_DECK[Math.floor(Math.random() * JOURNAL_DECK.length)];
+      while (n === prompt) n = JOURNAL_DECK[Math.floor(Math.random() * JOURNAL_DECK.length)];
+      return n;
+    });
+    setPromptKey(k => k + 1);
   }
-  if (viewing) return (
-    <div className="narrow">
-      <button className="linkBtn" onClick={() => setViewing(null)}>Back to Journal</button>
-      <span className="eyebrow">{new Date(viewing.createdAt).toLocaleDateString()}</span>
-      {viewing.prompt && <p className="jPrompt">{viewing.prompt}</p>}
-      <p className="jBody">{viewing.body}</p>
+  function save() {
+    if (!draft.trim()) return;
+    onSaved({ id: uid(), body: draft.trim(), prompt: prompt ?? undefined, createdAt: new Date().toISOString(), mood: mood ?? undefined, tags: tags.split(',').map(t => t.trim()).filter(Boolean) });
+    setDraft(''); setMood(null); setTags(''); setPrompt(null);
+    setKept(true); window.setTimeout(() => setKept(false), 1800);
+  }
+
+  return (
+    <div className="jWrite">
+      <div className="jPromptCard">
+        <div className="row1">
+          <span className="eyebrow">NEED A SPARK?</span>
+          <button className="btn ghost small" onClick={shuffle}>Shuffle prompt</button>
+        </div>
+        {prompt && <p key={promptKey} className="jPromptLine">{prompt}</p>}
+        {!prompt && <p className="jPromptLine dim">Shuffle for a question worth answering.</p>}
+      </div>
+
+      <div className="jMoodRow">
+        <span className="eyebrow">HOW IS IT GOING?</span>
+        <div className="jMoods">
+          {MOODS.map(m => (
+            <button key={m.id} className={`jMood ${mood === m.id ? 'on' : ''}`} onClick={() => setMood(mood === m.id ? null : m.id)} title={m.name}>
+              <span className="mOrb" style={{ background: m.grad }} />
+              <span className="jMoodName">{m.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="jEditorWrap">
+        <textarea className="jEditor" placeholder="Start writing... the page autosaves as you go." value={draft} onChange={e => setDraft(e.target.value)} />
+        <div className="jEditorFoot">
+          <span className="hint" style={{ margin: 0 }}>{words} words · ~{Math.max(1, Math.round(words / 200))} min read · saved locally</span>
+          <input className="jTags" placeholder="tags, comma, separated" value={tags} onChange={e => setTags(e.target.value)} />
+          <button className="btn" onClick={save} disabled={!draft.trim()}>Keep entry</button>
+        </div>
+      </div>
+      {kept && <div className="flash">Kept.</div>}
     </div>
   );
-  return (
-    <div className="narrow">
-      <h1 className="pageTitle">Journal</h1>
-      {prompt && <p className="jPrompt">{prompt}</p>}
-      <textarea className="bigInput tall" placeholder="Start writing..." value={text} onChange={e => setText(e.target.value)} />
-      <div className="btnRow">
-        <button className="btn" onClick={keep}>Keep</button>
-        <button className="btn ghost" onClick={() => setPrompt(JOURNAL_PROMPTS[Math.floor(Math.random() * JOURNAL_PROMPTS.length)])}>Give me a question</button>
+}
+
+function JTimeline({ entries }: { entries: Entry[] }) {
+  const [q, setQ] = useState('');
+  const [tag, setTag] = useState<string | null>(null);
+  const [sel, setSel] = useState<Entry | null>(null);
+  const allTags = Array.from(new Set(entries.flatMap(e => e.tags ?? [])));
+  const ql = q.toLowerCase();
+  const filtered = entries.filter(e =>
+    (!ql || e.body.toLowerCase().includes(ql) || (e.tags ?? []).some(t => t.toLowerCase().includes(ql))) &&
+    (!tag || (e.tags ?? []).includes(tag)));
+
+  const groups: { label: string; items: Entry[] }[] = [];
+  for (const e of filtered) {
+    const label = new Date(e.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    let g = groups.find(x => x.label === label);
+    if (!g) { g = { label, items: [] }; groups.push(g); }
+    g.items.push(e);
+  }
+
+  if (sel) {
+    const m = moodOf(sel.mood);
+    return (
+      <div className="jReader">
+        <button className="linkBtn" onClick={() => setSel(null)}>Back to timeline</button>
+        <div className="jReaderHead">
+          <span className="eyebrow">{new Date(sel.createdAt).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
+          <div className="jReaderMeta">
+            {m && <span className="mOrb small" style={{ background: m.grad }} title={m.name} />}
+            {(sel.tags ?? []).map(t => <span key={t} className="badge">{t}</span>)}
+          </div>
+        </div>
+        {sel.prompt && <p className="jPromptLine">{sel.prompt}</p>}
+        <p className="jReaderBody">{sel.body}</p>
+        <span className="hint">{wordsOf(sel.body)} words</span>
       </div>
-      {entries.map(e => (
-        <button key={e.id} className="entryRow" onClick={() => setViewing(e)}>
-          <span className="entryDate">{new Date(e.createdAt).toLocaleDateString()}</span>
-          <span className="entrySnippet">{e.body.slice(0, 80)}</span>
-        </button>
+    );
+  }
+
+  return (
+    <div className="jTimeline">
+      <div className="row1">
+        <input className="msSearch" placeholder="Search everything you wrote..." value={q} onChange={e => setQ(e.target.value)} />
+      </div>
+      {allTags.length > 0 && (
+        <div className="chips">
+          {allTags.map(t => <button key={t} className={`chip ${tag === t ? 'on' : ''}`} onClick={() => setTag(tag === t ? null : t)}>{t}</button>)}
+        </div>
+      )}
+      {filtered.length === 0 && <p className="hint">Nothing written yet.</p>}
+      {groups.map(g => (
+        <div key={g.label} className="jMonth">
+          <span className="jMonthLabel">{g.label}</span>
+          {g.items.map(e => {
+            const m = moodOf(e.mood);
+            return (
+              <button key={e.id} className="jEntryCard" onClick={() => setSel(e)}>
+                <span className="jEntryDate">{new Date(e.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                <span className="jEntryBody">{e.body.slice(0, 140)}{e.body.length > 140 ? '...' : ''}</span>
+                <span className="jEntrySide">
+                  {m && <span className="mOrb small" style={{ background: m.grad }} />}
+                  <span className="hint" style={{ margin: 0 }}>{wordsOf(e.body)}w</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
       ))}
+    </div>
+  );
+}
+
+function JInsights({ entries }: { entries: Entry[] }) {
+  const totalWords = entries.reduce((a, e) => a + wordsOf(e.body), 0);
+  const streak = (() => {
+    const days = new Set(entries.map(e => new Date(e.createdAt).toISOString().slice(0, 10)));
+    let s = 0; const d = new Date();
+    if (!days.has(d.toISOString().slice(0, 10))) d.setDate(d.getDate() - 1);
+    while (days.has(d.toISOString().slice(0, 10))) { s++; d.setDate(d.getDate() - 1); }
+    return s;
+  })();
+  const moodCounts = MOODS.map(m => ({ m, n: entries.filter(e => e.mood === m.id).length })).filter(x => x.n > 0);
+  const maxMood = Math.max(1, ...moodCounts.map(x => x.n));
+  const tagCounts = (() => {
+    const map = new Map<string, number>();
+    entries.forEach(e => (e.tags ?? []).forEach(t => map.set(t, (map.get(t) ?? 0) + 1)));
+    return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+  })();
+
+  const start = new Date('2026-01-01');
+  const now = new Date();
+  const days = Math.max(1, Math.floor((now.getTime() - start.getTime()) / 86400000) + 1);
+  const per = new Map<string, number>();
+  entries.forEach(e => { const k = new Date(e.createdAt).toISOString().slice(0, 10); per.set(k, (per.get(k) ?? 0) + wordsOf(e.body)); });
+  const cells: { k: string; w: number }[] = [];
+  for (let i = 0; i < days; i++) { const d = new Date(start); d.setDate(start.getDate() + i); const k = d.toISOString().slice(0, 10); cells.push({ k, w: per.get(k) ?? 0 }); }
+  const col = (w: number) => w === 0 ? 'rgba(255,255,255,0.06)' : w < 80 ? 'rgba(143,203,139,0.35)' : w < 200 ? 'rgba(143,203,139,0.6)' : w < 400 ? '#8FCB8B' : '#E3A95C';
+
+  return (
+    <div className="jInsights">
+      <div className="progStats">
+        <div className="statCard big"><b>{entries.length}</b><span>entries</span></div>
+        <div className="statCard big"><b>{streak}</b><span>day streak</span></div>
+        <div className="statCard big"><b>{totalWords.toLocaleString()}</b><span>words written</span></div>
+        <div className="statCard big"><b>{entries.length ? Math.round(totalWords / entries.length) : 0}</b><span>avg words</span></div>
+      </div>
+      <section className="card">
+        <span className="eyebrow">WRITING ACTIVITY · SINCE JAN 2026</span>
+        <div className="heat">{cells.map(c => <span key={c.k} title={`${c.k} · ${c.w} words`} className="hCell" style={{ background: col(c.w) }} />)}</div>
+      </section>
+      <div className="jInsRow">
+        <section className="card">
+          <span className="eyebrow">MOOD BALANCE</span>
+          <div className="moodBars">
+            {moodCounts.length === 0 && <p className="hint">Log moods while writing to see your balance.</p>}
+            {moodCounts.map(({ m, n }) => (
+              <div key={m.id} className="moodBarRow">
+                <span className="mOrb small" style={{ background: m.grad }} />
+                <span className="moodName">{m.name}</span>
+                <div className="moodTrack"><div className="moodFill" style={{ width: `${(n / maxMood) * 100}%`, background: m.color }} /></div>
+                <span className="hint" style={{ margin: 0 }}>{n}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="card">
+          <span className="eyebrow">TOP TAGS</span>
+          <div className="chips" style={{ marginTop: 12 }}>
+            {tagCounts.length === 0 && <p className="hint">Tag entries to see patterns.</p>}
+            {tagCounts.map(([t, n]) => <span key={t} className="chip on">{t} · {n}</span>)}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function JournalView() {
+  const [entries, setEntries] = useStored<Entry[]>('it.journal', []);
+  const [tab, setTab] = useState<'write' | 'timeline' | 'insights'>('write');
+  const dateLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
+  return (
+    <div className="jApp">
+      <header className="jHead">
+        <div>
+          <span className="eyebrow">{dateLabel.toUpperCase()}</span>
+          <h1 className="pageTitle" style={{ marginBottom: 0 }}>Journal</h1>
+        </div>
+        <div className="jTabs">
+          {([['write', 'Write'], ['timeline', 'Timeline'], ['insights', 'Insights']] as ['write' | 'timeline' | 'insights', string][]).map(([id, label]) => (
+            <button key={id} className={`fpTab ${tab === id ? 'on' : ''}`} onClick={() => setTab(id)}>{label}</button>
+          ))}
+        </div>
+      </header>
+      {tab === 'write' && <JWrite onSaved={e => setEntries(es => [e, ...es])} />}
+      {tab === 'timeline' && <JTimeline entries={entries} />}
+      {tab === 'insights' && <JInsights entries={entries} />}
     </div>
   );
 }
