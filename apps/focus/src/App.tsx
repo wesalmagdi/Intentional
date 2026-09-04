@@ -801,7 +801,7 @@ function LearnView({ onBegin }: { onBegin: (p: string, c: string) => void }) {
     const k = Math.floor(Math.random() * n);
     const targetMod = (360 - (k * seg + seg / 2)) % 360;
     const currentMod = ((angle % 360) + 360) % 360;
-    let delta = 360 * 5 + (targetMod - currentMod);
+    let delta = 360 * 8 + (targetMod - currentMod);
     if (delta <= 360) delta += 360;
     setAngle(a => a + delta);
 
@@ -811,7 +811,7 @@ function LearnView({ onBegin }: { onBegin: (p: string, c: string) => void }) {
       setCycleTxt(allPool[Math.floor(Math.random() * allPool.length)]);
       tick();
       cycle++;
-      if (cycle < 22) window.setTimeout(doCycle, 40 + Math.pow(cycle, 1.7) * 6);
+      if (cycle < 32) window.setTimeout(doCycle, 35 + Math.pow(cycle, 1.6) * 7);
     };
     doCycle();
 
@@ -824,20 +824,20 @@ function LearnView({ onBegin }: { onBegin: (p: string, c: string) => void }) {
       setSpinning(false);
       setBurst(b => b + 1);
       chime();
-    }, 2650);
+    }, 4200);
   }
 
   return (
     <div className="narrow">
       <h1 className="pageTitle">Learn</h1>
       <div className="tabs">
-        {([['topics', 'Topics'], ['deep', 'Deep'], ['own', 'My own']] as ['topics' | 'deep' | 'own', string][]).map(([m, l]) => (
+        {([['topics', 'Curiosities'], ['deep', 'Wonder'], ['own', 'My own']] as ['topics' | 'deep' | 'own', string][]).map(([m, l]) => (
           <button key={m} className={`tab ${mode === m ? 'on' : ''}`} onClick={() => { setMode(m); setCard(null); setCardCat(null); }}>{l}</button>
         ))}
       </div>
       {mode !== 'own' ? (
         <>
-          <p className="modeDesc">{mode === 'topics' ? `light curiosities · ${total} in the deck` : `big questions · ${total} in the deck`}</p>
+          <p className="modeDesc">{mode === 'topics' ? `small wonders from the everyday · ${total} in the deck` : `the big, strange, unanswerable ones · ${total} in the deck`}</p>
           <div className="wheelWrap">
             <div className="wheelPointer" />
             <div className="wheel" style={{ transform: `rotate(${angle}deg)` }}>
