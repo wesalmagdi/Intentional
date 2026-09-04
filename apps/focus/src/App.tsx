@@ -878,13 +878,13 @@ function LearnView({ onBegin }: { onBegin: (p: string, c: string) => void }) {
     <div className="narrow">
       <h1 className="pageTitle">Learn</h1>
       <div className="tabs">
-        {([['topics', 'Curiosities'], ['deep', 'Wonder'], ['own', 'My own']] as ['topics' | 'deep' | 'own', string][]).map(([m, l]) => (
+        {([['topics', 'Curiosities'], ['deep', 'Ponder'], ['own', 'My own']] as ['topics' | 'deep' | 'own', string][]).map(([m, l]) => (
           <button key={m} className={`tab ${mode === m ? 'on' : ''}`} onClick={() => { setMode(m); setCard(null); setCardCat(null); }}>{l}</button>
         ))}
       </div>
       {mode !== 'own' ? (
         <>
-          <p className="modeDesc">{mode === 'topics' ? `small wonders from the everyday` : `the big, strange, unanswerable ones`} · {totalAvail} fresh of {total} today</p>
+          <p className="modeDesc">{mode === 'topics' ? `small wonders from the everyday` : `physics, philosophy, and the strange hows of everything`} · {totalAvail} fresh of {total} today</p>
           <div className="wheelWrap">
             <div className="wheelPointer" />
             <div className="wheel" style={{ transform: `rotate(${angle}deg)` }}>
