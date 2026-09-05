@@ -5,6 +5,8 @@ type Step = { id: string; text: string; done: boolean };
 type Task = { id: string; listId: string; title: string; notes: string; due: string | null; important: boolean; myDay: boolean; done: boolean; steps: Step[]; createdAt: number; completedAt: number | null };
 type List = { id: string; name: string; color: string };
 import { TOPIC_POOLS, DEEP_POOLS } from './pools';
+import { CardSwipe, type CardItem } from './components/CardSwipe';
+import { EditBadge, type BadgeConfig } from './components/EditBadge';
 type Discovery = { id: string; category: string; prompt: string; findings: Record<string, string>; sources?: string; folderName?: string; createdAt: string };
 type Entry = { id: string; body: string; prompt?: string; createdAt: string; mood?: string; tags?: string[] };
 type Tree = { id: string; minutes: number; species: string; plantedAt: number; dead: boolean };
@@ -1631,7 +1633,7 @@ const ICON_PATHS: Record<string, string> = {
   moon: 'M20 14A8.5 8.5 0 1 1 10 3.5 7 7 0 0 0 20 14z',
   heart: 'M12 21s-7-4.6-9.5-9C.6 8.6 2.6 5 6 5c2 0 3.2 1 4 2.2C10.8 6 12 5 14 5c3.4 0 5.4 3.6 3.5 7C19 16.4 12 21 12 21z',
 };
-function Icon({ name }: { name: string }) {
+export function Icon({ name }: { name: string }) {
   return (
     <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d={ICON_PATHS[name] ?? ''} />
@@ -1716,19 +1718,24 @@ export default function App() {
       <main className="main2">
         {savedFlash && <div className="flash">Kept.</div>}
         {nav === 'home' && (
-          <div className="narrow">
+          <div style={{ maxWidth: 860, margin: '0 auto' }}>
             <span className="eyebrow">{dateLabel.toUpperCase()}</span>
             <h1 className="pageTitle">A quiet place to begin.</h1>
-            <div className="homeGrid">
-              {([['focus', 'Focus', 'Plant a tree. Do the work.'], ['learn', 'Learn', 'Spin a question, chase it for 10 minutes.'], ['journal', 'Journal', 'Think without performing.'], ['notice', 'Notice', 'One quiet minute.'], ['choose', 'Choose', 'Attention is a choice.'], ['zoom', 'Zoom Out', 'See it from further away.'], ['library', 'Library', 'What you have kept.'], ['revisit', 'Revisit', 'Meet your old mind.']] as [string, string, string][]).map(([id, t, s]) => (
-                <button key={id} className="homeCard" onClick={() => setNav(id)}>
-                  <span className="homeTitle">{t}</span>
-                  <span className="homeSub">{s}</span>
-                </button>
-              ))}
-            </div>
+            <CardSwipe
+              items={[
+                { id: 'focus', title: 'Focus', description: 'Plant a tree. Do the work. Build a forest.', icon: 'leaf', color: '#D8F0E2' },
+                { id: 'learn', title: 'Learn', description: 'Spin a question, chase it for 10 minutes.', icon: 'book', color: '#FFE9F1' },
+                { id: 'journal', title: 'Journal', description: 'Think without performing. Write to understand.', icon: 'pen', color: '#E6E0FF' },
+                { id: 'notice', title: 'Notice', description: 'One quiet minute. Breathe with the sky.', icon: 'eye', color: '#FFF0D9' },
+                { id: 'choose', title: 'Choose', description: 'Attention is a choice. Make it intentional.', icon: 'fork', color: '#F6E3EE' },
+                { id: 'zoom', title: 'Zoom Out', description: 'See it from further away. Find the pattern.', icon: 'globe', color: '#DDEBFF' },
+                { id: 'library', title: 'Library', description: 'What you have kept. What you have learned.', icon: 'mark', color: '#EAF7EF' },
+                { id: 'revisit', title: 'Revisit', description: 'Meet your old mind. See what ripened.', icon: 'refresh', color: '#F3EAF3' },
+              ]}
+              onSelect={(id) => setNav(id)}
+            />
           </div>
-        )}
+)}
         {nav === 'focus' && <FocusView />}
         {nav === 'learn' && !challenge && !reflect && <LearnView onBegin={(p, c) => setChallenge({ prompt: p, category: c })} />}
         {challenge && <ChallengeView prompt={challenge.prompt} category={challenge.category} onDone={() => { setReflect(challenge); setChallenge(null); }} />}
