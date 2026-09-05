@@ -7,6 +7,8 @@ type List = { id: string; name: string; color: string };
 import { TOPIC_POOLS, DEEP_POOLS } from './pools';
 import { CardSwipe, type CardItem } from './components/CardSwipe';
 import { EditBadge, type BadgeConfig } from './components/EditBadge';
+import { ScheduleButton } from './components/ScheduleButton';
+import { Dock, type DockItem } from './components/Dock';
 type Discovery = { id: string; category: string; prompt: string; findings: Record<string, string>; sources?: string; folderName?: string; createdAt: string };
 type Entry = { id: string; body: string; prompt?: string; createdAt: string; mood?: string; tags?: string[] };
 type Tree = { id: string; minutes: number; species: string; plantedAt: number; dead: boolean };
@@ -794,7 +796,29 @@ function FocusView() {
           <span className="statChip"><b>{coins}</b> coins{justEarned !== null && <span className="coinPop">+{justEarned}</span>}</span>
         </div>
       </div>
-      {page === 'tasks' && <TasksPage lists={lists} setLists={setLists} tasks={tasks} setTasks={setTasks} />}
+            {page === 'tasks' && (
+        <>
+          <TasksPage lists={lists} setLists={setLists} tasks={tasks} setTasks={setTasks} />
+          <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center' }}>
+            <ScheduleButton onSchedule={(text, date, time) => {
+              const newTask: Task = {
+                id: uid(),
+                listId: 'inbox',
+                title: text,
+                notes: `Scheduled for ${date} at ${time}`,
+                due: date.split(' ').reverse().join('-'),
+                important: false,
+                myDay: false,
+                done: false,
+                steps: [],
+                createdAt: Date.now(),
+                completedAt: null,
+              };
+              setTasks(ts => [newTask, ...ts]);
+            }} />
+          </div>
+        </>
+      )}
       {page === 'plant' && <PlantPage session={session} plant={plant} giveUp={giveUp} trees={trees} coins={coins} breakOffer={breakOffer} setBreakOffer={setBreakOffer} breakLeft={breakLeft} setBreakLeft={setBreakLeft} />}
       {page === 'forest' && <ForestPage trees={trees} coins={coins} />}
       {page === 'progress' && <ProgressPage trees={trees} coins={coins} />}
@@ -1750,12 +1774,11 @@ export default function App() {
 
       <div className="dockHot" />
       <nav className="dock">
-        {NAV.map(([id, label, icon]) => (
-          <button key={id} className={`dockBtn ${nav === id ? 'on' : ''}`} onClick={() => { setNav(id); setChallenge(null); setReflect(null); }}>
-            <Icon name={icon} />
-            <span>{label}</span>
-          </button>
-        ))}
+        <Dock
+          items={NAV.map(([id, label, icon]) => ({ id, icon, label }))}
+          onSelect={(id) => { setNav(id); setChallenge(null); setReflect(null); }}
+          selectedId={nav}
+        />
       </nav>
     </div>
   );
