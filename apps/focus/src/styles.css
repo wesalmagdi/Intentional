@@ -1630,3 +1630,14 @@ body{background-image:none}
 .softEmpty{display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0 2px;text-align:center}
 .softEmpty p{color:#8A8190;font-size:13px}
 .softEmpty.small{padding:0 0 8px}
+
+/* ===== home: side-by-side soft planner ===== */
+.homeSoft{width:min(940px,calc(100vw - 34px));display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch}
+.softHero,.softQuote{grid-column:1/-1}
+@media(max-width:820px){.homeSoft{grid-template-columns:1fr}}
+.mascotImg{width:112px;mix-blend-mode:multiply;pointer-events:none;user-select:none}
+.mascotImg.hero{width:150px;margin:0 auto -12px;display:block}
+.mascotImg.small{width:86px}
+.softEmpty{display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0 2px;text-align:center}
+.softEmpty p{color:#8A8190;font-size:13px}
+.softEmpty.small{padding:0 0 8px}
