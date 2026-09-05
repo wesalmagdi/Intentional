@@ -1362,168 +1362,189 @@ function NoticeView({ onKeep }: { onKeep: (d: Discovery) => void }) {
 }
 
 // ---------- Choose / ZoomOut ----------
-const CHOOSE_DECK = ['Deep work', 'Health & movement', 'Family', 'Friends', 'Learning', 'Rest', 'Nature', 'Reading', 'Creating', 'Cooking', 'Music', 'Walking', 'Journaling', 'Money matters', 'Home & order', 'Quiet time', 'Screen time', 'News', 'Social media', 'Email', 'Meetings', 'Worrying', 'Perfectionism', 'People-pleasing'];
-type Bin = 'nourish' | 'trim' | 'rest';
-const BINS: { id: Bin; label: string; sub: string; icon: string; color: string }[] = [
-  { id: 'nourish', label: 'Nourish', sub: 'more of this', icon: 'leaf', color: '#3DB478' },
-  { id: 'trim', label: 'Trim', sub: 'less of this', icon: 'scissors', color: '#E86A6A' },
-  { id: 'rest', label: 'Rest', sub: 'not today', icon: 'moon', color: '#9F7BFF' },
+type ChooseMethod = 'eisenhower' | 'ivylee' | 'buffett' | 'onething';
+const CHOOSE_METHODS: { id: ChooseMethod; name: string; sub: string; icon: string }[] = [
+  { id: 'eisenhower', name: 'Eisenhower Matrix', sub: 'urgent vs important — four gardens', icon: 'globe' },
+  { id: 'ivylee', name: 'Ivy Lee', sub: 'six things, in true order', icon: 'book' },
+  { id: 'buffett', name: 'Buffett 2-List', sub: 'top five; avoid the rest', icon: 'fork' },
+  { id: 'onething', name: 'One Thing', sub: 'the single needle-mover', icon: 'leaf' },
 ];
 
+function ToolHead({ title, back }: { title: string; back: () => void }) {
+  return (
+    <div className="toolHead">
+      <button className="linkBtn" onClick={back} style={{ margin: 0 }}>all methods</button>
+      <span className="eyebrow">{title.toUpperCase()}</span>
+    </div>
+  );
+}
+
+function Eisen({ onKeep, back }: { onKeep: (d: Discovery) => void; back: () => void }) {
+  const QUADS = [
+    { id: 'do', name: 'Do first', sub: 'urgent + important', color: '#C97B96' },
+    { id: 'schedule', name: 'Schedule', sub: 'important, not urgent', color: '#8FA98F' },
+    { id: 'delegate', name: 'Delegate', sub: 'urgent, not important', color: '#8B7BA8' },
+    { id: 'drop', name: 'Let go', sub: 'neither', color: '#9B94A3' },
+  ];
+  const [tray, setTray] = useState<string[]>([]);
+  const [placed, setPlaced] = useState<Record<string, string[]>>({ do: [], schedule: [], delegate: [], drop: [] });
+  const [input, setInput] = useState('');
+
+  const add = (e: React.FormEvent) => { e.preventDefault(); const v = input.trim(); if (!v) return; setTray(t => [...t, v]); setInput(''); };
+  const place = (item: string, q: string) => { setTray(t => t.filter(x => x !== item)); setPlaced(p => ({ ...p, [q]: [...p[q], item] })); };
+  const unplace = (item: string, q: string) => { setPlaced(p => ({ ...p, [q]: p[q].filter(x => x !== item) })); setTray(t => [...t, item]); };
+  const anyPlaced = QUADS.some(q => placed[q.id].length > 0);
+
+  const save = () => onKeep({
+    id: uid(), category: 'Choose', prompt: 'Eisenhower Matrix — where does today go?',
+    findings: {
+      dofirst: placed.do.join(', ') || 'nothing',
+      schedule: placed.schedule.join(', ') || 'nothing',
+      delegate: placed.delegate.join(', ') || 'nothing',
+      letgo: placed.drop.join(', ') || 'nothing',
+    },
+    createdAt: new Date().toISOString(),
+  });
+
+  return (
+    <>
+      <ToolHead title="Eisenhower Matrix" back={back} />
+      <p className="modeDesc">dump everything, then give each thing its garden.</p>
+      <form className="quickAdd" onSubmit={add}><span className="qaPlus">+</span><input placeholder="add something on your mind..." value={input} onChange={e => setInput(e.target.value)} /></form>
+      {tray.length > 0 && (
+        <div className="trayBox">
+          {tray.map(item => (
+            <div key={item} className="trayRow">
+              <span className="trayName">{item}</span>
+              <div className="trayDots">
+                {QUADS.map(q => (
+                  <button key={q.id} className="trayDot" style={{ background: q.color }} title={`${q.name}: ${q.sub}`} onClick={() => place(item, q.id)} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="quadGrid">
+        {QUADS.map(q => (
+          <div key={q.id} className="quad" style={{ borderColor: q.color }}>
+            <div className="quadHead" style={{ color: q.color }}>{q.name}</div>
+            <div className="quadSub">{q.sub}</div>
+            <div className="binChips">
+              {placed[q.id].map(c => (
+                <button key={c} className="binChip" onClick={() => unplace(c, q.id)} title="put back">{c} ×</button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="btnRow center">
+        <button className="btn" disabled={!anyPlaced} onClick={save}>Keep today's matrix</button>
+      </div>
+    </>
+  );
+}
+
+function IvyLee({ onKeep, back }: { onKeep: (d: Discovery) => void; back: () => void }) {
+  const [items, setItems] = useState<string[]>([]);
+  const [input, setInput] = useState('');
+  const add = (e: React.FormEvent) => { e.preventDefault(); const v = input.trim(); if (!v || items.length >= 6) return; setItems(i => [...i, v]); setInput(''); };
+  const move = (i: number, d: number) => setItems(a => { const j = i + d; if (j < 0 || j >= a.length) return a; const c = [...a]; [c[i], c[j]] = [c[j], c[i]]; return c; });
+  const remove = (i: number) => setItems(a => a.filter((_, x) => x !== i));
+
+  return (
+    <>
+      <ToolHead title="Ivy Lee" back={back} />
+      <p className="modeDesc">tomorrow's six things, in the only order that matters.</p>
+      <form className="quickAdd" onSubmit={add}><span className="qaPlus">+</span><input placeholder={items.length >= 6 ? 'six is the limit — that is the method' : 'add a priority...'} value={input} onChange={e => setInput(e.target.value)} disabled={items.length >= 6} /></form>
+      <div className="ivyList">
+        {items.map((it, i) => (
+          <div key={it} className="ivyRow">
+            <span className="ivyNum">{i + 1}</span>
+            <span className="ivyName">{it}</span>
+            <button className="ivyMove" onClick={() => move(i, -1)} disabled={i === 0}>↑</button>
+            <button className="ivyMove" onClick={() => move(i, 1)} disabled={i === items.length - 1}>↓</button>
+            <button className="ivyMove" onClick={() => remove(i)}>×</button>
+          </div>
+        ))}
+      </div>
+      <div className="btnRow center">
+        <button className="btn" disabled={items.length === 0} onClick={() => onKeep({ id: uid(), category: 'Choose', prompt: 'Ivy Lee — six things in true order', findings: { list: items.map((x, i) => `${i + 1}. ${x}`).join('  ·  ') }, createdAt: new Date().toISOString() })}>Keep the order</button>
+      </div>
+    </>
+  );
+}
+
+function Buffett({ onKeep, back }: { onKeep: (d: Discovery) => void; back: () => void }) {
+  const [dump, setDump] = useState<string[]>([]);
+  const [picked, setPicked] = useState<string[]>([]);
+  const [input, setInput] = useState('');
+  const add = (e: React.FormEvent) => { e.preventDefault(); const v = input.trim(); if (!v || dump.includes(v)) return; setDump(d => [...d, v]); setInput(''); };
+  const toggle = (item: string) => setPicked(p => p.includes(item) ? p.filter(x => x !== item) : (p.length >= 5 ? p : [...p, item]));
+  const avoid = dump.filter(x => !picked.includes(x));
+
+  return (
+    <>
+      <ToolHead title="Buffett 2-List" back={back} />
+      <p className="modeDesc">brain-dump goals, star the five that matter. the rest become avoid-at-all-costs.</p>
+      <form className="quickAdd" onSubmit={add}><span className="qaPlus">+</span><input placeholder="add a goal or want..." value={input} onChange={e => setInput(e.target.value)} /></form>
+      <div className="ivyList">
+        {dump.map(it => (
+          <div key={it} className={`ivyRow ${picked.includes(it) ? 'picked' : ''}`}>
+            <button className={`pickStar ${picked.includes(it) ? 'on' : ''}`} onClick={() => toggle(it)}>★</button>
+            <span className="ivyName">{it}</span>
+            {picked.includes(it) && <span className="buffTag focus">top 5</span>}
+            {!picked.includes(it) && picked.length >= 5 && <span className="buffTag avoid">avoid</span>}
+          </div>
+        ))}
+      </div>
+      <p className="modeDesc">{picked.length}/5 chosen</p>
+      <div className="btnRow center">
+        <button className="btn" disabled={picked.length === 0} onClick={() => onKeep({ id: uid(), category: 'Choose', prompt: 'Buffett 2-List — focus and avoid', findings: { focus: picked.join(', '), avoid: avoid.join(', ') || 'nothing' }, createdAt: new Date().toISOString() })}>Keep the two lists</button>
+      </div>
+    </>
+  );
+}
+
+function OneThing({ onKeep, back }: { onKeep: (d: Discovery) => void; back: () => void }) {
+  const [thing, setThing] = useState('');
+  const [why, setWhy] = useState('');
+  return (
+    <>
+      <ToolHead title="One Thing" back={back} />
+      <p className="modeDesc">the single needle-mover. everything else can wait kindly.</p>
+      <label className="fld">what is the one thing?<textarea value={thing} onChange={e => setThing(e.target.value)} placeholder="if today only moved this, it would be enough..." /></label>
+      <label className="fld">why this one?<input value={why} onChange={e => setWhy(e.target.value)} placeholder="optional, but honest" /></label>
+      <div className="btnRow center">
+        <button className="btn" disabled={!thing.trim()} onClick={() => onKeep({ id: uid(), category: 'Choose', prompt: 'One Thing — the needle-mover', findings: { one: thing.trim(), why: why.trim() || 'because it matters' }, createdAt: new Date().toISOString() })}>Seal it</button>
+      </div>
+    </>
+  );
+}
+
 function ChooseView({ onKeep }: { onKeep: (d: Discovery) => void }) {
-  const [deck, setDeck] = useState<string[]>(CHOOSE_DECK);
-  const [bins, setBins] = useState<Record<Bin, string[]>>({ nourish: [], trim: [], rest: [] });
-  const [hearts, setHearts] = useState<Record<string, number>>({});
-  const [one, setOne] = useState<string | null>(null);
-  const [step, setStep] = useState<'sort' | 'weigh' | 'one' | 'done'>('sort');
-  const [custom, setCustom] = useState('');
-  const [burst, setBurst] = useState(0);
-  const [discoveries] = useStored<Discovery[]>('it.discoveries', []);
-  const lastChoose = discoveries.find(d => d.category === 'Choose');
-
-  const assign = (card: string, bin: Bin) => {
-    setBins(b => ({ ...b, [bin]: [...b[bin], card] }));
-    setDeck(d => d.filter(x => x !== card));
-  };
-  const unassign = (card: string, bin: Bin) => {
-    setBins(b => ({ ...b, [bin]: b[bin].filter(x => x !== card) }));
-    setDeck(d => [...d, card]);
-  };
-  const addCustom = (e: React.FormEvent) => {
-    e.preventDefault();
-    const c = custom.trim();
-    if (!c) return;
-    setDeck(d => (d.includes(c) ? d : [...d, c]));
-    setCustom('');
-  };
-
-  function seal() {
-    if (!one) return;
-    const nourish = bins.nourish.map(c => (hearts[c] ? `${c} ${'♥'.repeat(hearts[c])}` : c)).join(', ');
-    onKeep({
-      id: uid(), category: 'Choose', prompt: 'What deserves your attention today?',
-      findings: { one, nourish, trim: bins.trim.join(', ') || 'nothing', rest: bins.rest.join(', ') || 'nothing' },
-      createdAt: new Date().toISOString(),
-    });
-    setBurst(b => b + 1);
-    setStep('done');
-  }
-
-  function reset() {
-    setStep('sort'); setBins({ nourish: [], trim: [], rest: [] }); setDeck(CHOOSE_DECK); setHearts({}); setOne(null);
-  }
-
+  const [method, setMethod] = useState<ChooseMethod | null>(null);
   return (
     <div className="narrow" style={{ maxWidth: 860 }}>
       <h1 className="pageTitle">Choose</h1>
-      {lastChoose?.findings?.one && step !== 'done' && (
-        <p className="modeDesc">last time, your one thing was "{lastChoose.findings.one}"</p>
-      )}
-
-      {step === 'sort' && (
+      {!method && (
         <>
-          <p className="modeDesc">sort today's deck into three gardens. attention is a choice.</p>
-          <div className="binRow">
-            {BINS.map(b => (
-              <div key={b.id} className="binZone" style={{ borderColor: b.color }}>
-                <div className="binHead" style={{ color: b.color }}><Icon name={b.icon} /> {b.label} <span className="binSub">{b.sub}</span></div>
-                <div className="binChips">
-                  {bins[b.id].map(c => (
-                    <button key={c} className="binChip" onClick={() => unassign(c, b.id)} title="put back">{c} ×</button>
-                  ))}
-                  {bins[b.id].length === 0 && <span className="hint" style={{ margin: 0 }}>nothing yet...</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-          <form className="quickAdd" onSubmit={addCustom}><span className="qaPlus">+</span><input placeholder="add your own card..." value={custom} onChange={e => setCustom(e.target.value)} /></form>
-          <div className="cardFan">
-            {deck.map(c => {
-              const h = hashN(c);
-              return (
-                <div key={c} className="chCard" style={{ transform: `rotate(${(h % 5) - 2}deg)`, background: WHEEL_COLORS[h % WHEEL_COLORS.length] }}>
-                  <span className="chName">{c}</span>
-                  <div className="chBtns">
-                    {BINS.map(b => (
-                      <button key={b.id} className="chBtn" style={{ color: b.color }} title={b.label} onClick={() => assign(c, b.id)}><Icon name={b.icon} /></button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-            {deck.length === 0 && <p className="hint">deck cleared!</p>}
-          </div>
-          <div className="btnRow center">
-            <button className="btn" disabled={bins.nourish.length === 0} onClick={() => setStep('weigh')}>Continue · weigh what nourishes</button>
-          </div>
-        </>
-      )}
-
-      {step === 'weigh' && (
-        <>
-          <p className="modeDesc">attention is finite. give 1-3 hearts to what matters most.</p>
-          <div className="weighList">
-            {bins.nourish.map(c => (
-              <div key={c} className="weighRow">
-                <span className="weighName">{c}</span>
-                <div className="heartRow">
-                  {[1, 2, 3].map(n => (
-                    <button key={n} className={`heartBtn ${(hearts[c] ?? 0) >= n ? 'on' : ''}`}
-                      onClick={() => setHearts(h => ({ ...h, [c]: (h[c] ?? 0) === n ? n - 1 : n }))}>♥</button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="btnRow center">
-            <button className="btn ghost" onClick={() => setStep('sort')}>Back</button>
-            <button className="btn" onClick={() => setStep('one')}>Continue · choose the one</button>
-          </div>
-        </>
-      )}
-
-      {step === 'one' && (
-        <>
-          <p className="modeDesc">if everything is important, nothing is. pick the one thing.</p>
-          <div className="onePick">
-            {bins.nourish.map(c => (
-              <button key={c} className={`oneCard ${one === c ? 'on' : ''}`} onClick={() => setOne(c)}>
-                <span>{c}</span>
-                {(hearts[c] ?? 0) > 0 && <span className="oneHearts">{'♥'.repeat(hearts[c])}</span>}
+          <p className="modeDesc">attention is a choice. pick a lens for today.</p>
+          <div className="methodGrid">
+            {CHOOSE_METHODS.map(m => (
+              <button key={m.id} className="methodCard" onClick={() => setMethod(m.id)}>
+                <span className="methodIcon"><Icon name={m.icon} /></span>
+                <span className="methodName">{m.name}</span>
+                <span className="methodSub">{m.sub}</span>
               </button>
             ))}
           </div>
-          {one && (
-            <div className="oneReveal">
-              <span className="eyebrow">TODAY'S ONE THING</span>
-              <p className="oneBig">{one}</p>
-            </div>
-          )}
-          <div className="btnRow center">
-            <button className="btn ghost" onClick={() => setStep('weigh')}>Back</button>
-            <button className="btn" disabled={!one} onClick={seal}>Seal today's choice</button>
-          </div>
         </>
       )}
-
-      {step === 'done' && (
-        <div className="doneWrap">
-          {burst > 0 && (
-            <span className="confetti" key={burst}>
-              {Array.from({ length: 16 }).map((_, i) => {
-                const h = hashN('ch' + burst + '_' + i);
-                return <i key={i} style={{ left: `${6 + (h % 88)}%`, background: WHEEL_COLORS[h % WHEEL_COLORS.length], animationDelay: `${(h % 40) / 100}s`, transform: `rotate(${h % 360}deg)` }} />;
-              })}
-            </span>
-          )}
-          <span className="eyebrow">SEALED</span>
-          <p className="oneBig">{one}</p>
-          <p className="modeDesc">nourish: {bins.nourish.join(', ')} · trim: {bins.trim.join(', ') || 'nothing'} · resting: {bins.rest.join(', ') || 'nothing'}</p>
-          <div className="btnRow center">
-            <button className="btn ghost" onClick={reset}>Choose again</button>
-          </div>
-        </div>
-      )}
+      {method === 'eisenhower' && <Eisen onKeep={onKeep} back={() => setMethod(null)} />}
+      {method === 'ivylee' && <IvyLee onKeep={onKeep} back={() => setMethod(null)} />}
+      {method === 'buffett' && <Buffett onKeep={onKeep} back={() => setMethod(null)} />}
+      {method === 'onething' && <OneThing onKeep={onKeep} back={() => setMethod(null)} />}
     </div>
   );
 }

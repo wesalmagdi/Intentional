@@ -1641,3 +1641,37 @@ body{background-image:none}
 .softEmpty{display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0 2px;text-align:center}
 .softEmpty p{color:#8A8190;font-size:13px}
 .softEmpty.small{padding:0 0 8px}
+
+/* ===== Choose: method picker + tools ===== */
+.toolHead{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.methodGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+@media(max-width:700px){.methodGrid{grid-template-columns:1fr}}
+.methodCard{display:flex;flex-direction:column;align-items:flex-start;gap:8px;background:#fff;border:1.5px solid var(--line);border-radius:22px;padding:20px;cursor:pointer;transition:all .18s;text-align:left}
+.methodCard:hover{transform:translateY(-3px);border-color:#D99BB1;box-shadow:0 14px 34px rgba(120,90,100,.12)}
+.methodIcon{width:44px;height:44px;border-radius:14px;background:#F7E3EA;color:#B96A85;display:flex;align-items:center;justify-content:center}
+.methodIcon .ic{width:20px;height:20px}
+.methodName{font-family:var(--serif);font-size:19px;color:#3F3A44}
+.methodSub{font-size:12px;color:#8A8190}
+.trayBox{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.trayRow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:10px 14px}
+.trayName{font-size:14px;font-weight:700;color:#4A4350}
+.trayDots{display:flex;gap:6px}
+.trayDot{width:18px;height:18px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.18);cursor:pointer;transition:transform .12s}
+.trayDot:hover{transform:scale(1.25)}
+.quadGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+@media(max-width:700px){.quadGrid{grid-template-columns:1fr}}
+.quad{border:2px dashed;border-radius:20px;padding:14px;min-height:120px;background:rgba(255,255,255,.7)}
+.quadHead{font-weight:800;font-size:15px}
+.quadSub{font-size:11px;color:#8A8190;margin-bottom:8px}
+.ivyList{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.ivyRow{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:10px 14px}
+.ivyRow.picked{border-color:#D99BB1;background:#FBF3F6}
+.ivyNum{width:26px;height:26px;border-radius:50%;background:#F7E3EA;color:#A95F78;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ivyName{flex:1;font-size:14px;font-weight:700;color:#4A4350}
+.ivyMove{border:none;background:#FBF7F5;border-radius:8px;width:26px;height:26px;color:#8A8190;cursor:pointer;font-size:13px}
+.ivyMove:disabled{opacity:.3;cursor:default}
+.pickStar{border:none;background:none;font-size:19px;color:#E5D8D3;cursor:pointer;transition:all .15s}
+.pickStar.on{color:#C97B96;text-shadow:0 0 10px rgba(201,123,150,.4)}
+.buffTag{font-size:10px;font-weight:800;letter-spacing:.08em;border-radius:999px;padding:3px 9px}
+.buffTag.focus{background:#F7E3EA;color:#A95F78}
+.buffTag.avoid{background:#F1EDEA;color:#9B94A3}
