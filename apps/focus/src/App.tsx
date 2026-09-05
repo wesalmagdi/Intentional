@@ -1723,14 +1723,14 @@ export default function App() {
             <h1 className="pageTitle">A quiet place to begin.</h1>
             <CardSwipe
               items={[
-                { id: 'focus', title: 'Focus', description: 'Plant a tree. Do the work. Build a forest.', icon: 'leaf', color: '#D8F0E2' },
-                { id: 'learn', title: 'Learn', description: 'Spin a question, chase it for 10 minutes.', icon: 'book', color: '#FFE9F1' },
-                { id: 'journal', title: 'Journal', description: 'Think without performing. Write to understand.', icon: 'pen', color: '#E6E0FF' },
-                { id: 'notice', title: 'Notice', description: 'One quiet minute. Breathe with the sky.', icon: 'eye', color: '#FFF0D9' },
-                { id: 'choose', title: 'Choose', description: 'Attention is a choice. Make it intentional.', icon: 'fork', color: '#F6E3EE' },
-                { id: 'zoom', title: 'Zoom Out', description: 'See it from further away. Find the pattern.', icon: 'globe', color: '#DDEBFF' },
-                { id: 'library', title: 'Library', description: 'What you have kept. What you have learned.', icon: 'mark', color: '#EAF7EF' },
-                { id: 'revisit', title: 'Revisit', description: 'Meet your old mind. See what ripened.', icon: 'refresh', color: '#F3EAF3' },
+                { id: 'focus', title: 'Focus', description: 'Plant a tree. Do the work. Build a forest.', icon: 'leaf', gradient: 'linear-gradient(135deg, #D8F0E2 0%, #A8E6CF 100%)' },
+                { id: 'learn', title: 'Learn', description: 'Spin a question, chase it for 10 minutes.', icon: 'book', gradient: 'linear-gradient(135deg, #FFE9F1 0%, #FFB6D9 100%)' },
+                { id: 'journal', title: 'Journal', description: 'Think without performing. Write to understand.', icon: 'pen', gradient: 'linear-gradient(135deg, #E6E0FF 0%, #C5B3FF 100%)' },
+                { id: 'notice', title: 'Notice', description: 'One quiet minute. Breathe with the sky.', icon: 'eye', gradient: 'linear-gradient(135deg, #FFF0D9 0%, #FFD9A8 100%)' },
+                { id: 'choose', title: 'Choose', description: 'Attention is a choice. Make it intentional.', icon: 'fork', gradient: 'linear-gradient(135deg, #F6E3EE 0%, #E8B4D9 100%)' },
+                { id: 'zoom', title: 'Zoom Out', description: 'See it from further away. Find the pattern.', icon: 'globe', gradient: 'linear-gradient(135deg, #DDEBFF 0%, #A8D4FF 100%)' },
+                { id: 'library', title: 'Library', description: 'What you have kept. What you have learned.', icon: 'mark', gradient: 'linear-gradient(135deg, #EAF7EF 0%, #B8E6D3 100%)' },
+                { id: 'revisit', title: 'Revisit', description: 'Meet your old mind. See what ripened.', icon: 'refresh', gradient: 'linear-gradient(135deg, #F3EAF3 0%, #D9C5E8 100%)' },
               ]}
               onSelect={(id) => setNav(id)}
             />
