@@ -1363,23 +1363,25 @@ function NoticeView({ onKeep }: { onKeep: (d: Discovery) => void }) {
 
 // ---------- Choose / ZoomOut ----------
 type ChooseMethod = 'eisenhower' | 'ivylee' | 'buffett' | 'onething';
-const CHOOSE_METHODS: { id: ChooseMethod; name: string; sub: string; icon: string }[] = [
-  { id: 'eisenhower', name: 'Eisenhower Matrix', sub: 'urgent vs important — four gardens', icon: 'globe' },
-  { id: 'ivylee', name: 'Ivy Lee', sub: 'six things, in true order', icon: 'book' },
-  { id: 'buffett', name: 'Buffett 2-List', sub: 'top five; avoid the rest', icon: 'fork' },
-  { id: 'onething', name: 'One Thing', sub: 'the single needle-mover', icon: 'leaf' },
+type ChooseEntry = { date: string; method: string; headline: string; findings: Record<string, string> };
+const CHOOSE_METHODS: { id: ChooseMethod; name: string; sub: string; icon: string; why: string }[] = [
+  { id: 'eisenhower', name: 'Eisenhower Matrix', sub: 'urgent vs important. four little gardens: do, schedule, delegate, let go.', icon: 'globe', why: 'everything feels urgent until you give it an address. placing a thing somewhere is choosing it — or kindly not.' },
+  { id: 'ivylee', name: 'Ivy Lee', sub: 'write six things tonight; do them in order tomorrow. the list is the boss.', icon: 'book', why: 'a short list in true order beats a long list in panic order. tomorrow-you just starts at number one.' },
+  { id: 'buffett', name: 'Buffett 2-List', sub: 'star five wishes; the rest become avoid-at-all-costs.', icon: 'fork', why: 'saying no in advance is cheaper than saying no mid-temptation. the un-starred list is your guardrail.' },
+  { id: 'onething', name: 'One Thing', sub: 'find the single needle-mover; let the rest wait kindly.', icon: 'leaf', why: 'focus is subtraction. one clear needle-mover makes every hour easier to spend.' },
 ];
+const hideImg = (e: React.SyntheticEvent<HTMLImageElement>) => { (e.target as HTMLImageElement).style.display = 'none'; };
 
-function ToolHead({ title, back }: { title: string; back: () => void }) {
+function Explain({ text }: { text: string }) {
   return (
-    <div className="toolHead">
-      <button className="linkBtn" onClick={back} style={{ margin: 0 }}>all methods</button>
-      <span className="eyebrow">{title.toUpperCase()}</span>
+    <div className="explainBox">
+      <img src="/mascot-think.png" className="mascotImg tiny" alt="" onError={hideImg} />
+      <p>{text}</p>
     </div>
   );
 }
 
-function Eisen({ onKeep, back }: { onKeep: (d: Discovery) => void; back: () => void }) {
+function Eisen({ onDone, back }: { onDone: (d: Discovery, headline: string) => void; back: () => void }) {
   const QUADS = [
     { id: 'do', name: 'Do first', sub: 'urgent + important', color: '#C97B96' },
     { id: 'schedule', name: 'Schedule', sub: 'important, not urgent', color: '#8FA98F' },
@@ -1389,27 +1391,20 @@ function Eisen({ onKeep, back }: { onKeep: (d: Discovery) => void; back: () => v
   const [tray, setTray] = useState<string[]>([]);
   const [placed, setPlaced] = useState<Record<string, string[]>>({ do: [], schedule: [], delegate: [], drop: [] });
   const [input, setInput] = useState('');
-
   const add = (e: React.FormEvent) => { e.preventDefault(); const v = input.trim(); if (!v) return; setTray(t => [...t, v]); setInput(''); };
   const place = (item: string, q: string) => { setTray(t => t.filter(x => x !== item)); setPlaced(p => ({ ...p, [q]: [...p[q], item] })); };
   const unplace = (item: string, q: string) => { setPlaced(p => ({ ...p, [q]: p[q].filter(x => x !== item) })); setTray(t => [...t, item]); };
   const anyPlaced = QUADS.some(q => placed[q.id].length > 0);
-
-  const save = () => onKeep({
+  const save = () => onDone({
     id: uid(), category: 'Choose', prompt: 'Eisenhower Matrix — where does today go?',
-    findings: {
-      dofirst: placed.do.join(', ') || 'nothing',
-      schedule: placed.schedule.join(', ') || 'nothing',
-      delegate: placed.delegate.join(', ') || 'nothing',
-      letgo: placed.drop.join(', ') || 'nothing',
-    },
+    findings: { dofirst: placed.do.join(', ') || 'nothing', schedule: placed.schedule.join(', ') || 'nothing', delegate: placed.delegate.join(', ') || 'nothing', letgo: placed.drop.join(', ') || 'nothing' },
     createdAt: new Date().toISOString(),
-  });
-
+  }, placed.do[0] ?? 'a calmer day');
   return (
     <>
-      <ToolHead title="Eisenhower Matrix" back={back} />
-      <p className="modeDesc">dump everything, then give each thing its garden.</p>
+      <div className="toolHead"><button className="linkBtn" style={{ margin: 0 }} onClick={back}>all methods</button><span className="eyebrow">EISENHOWER MATRIX</span></div>
+      <Explain text={CHOOSE_METHODS[0].why} />
+      <p className="modeDesc">dump everything, then tap a colored dot to give each thing its garden.</p>
       <form className="quickAdd" onSubmit={add}><span className="qaPlus">+</span><input placeholder="add something on your mind..." value={input} onChange={e => setInput(e.target.value)} /></form>
       {tray.length > 0 && (
         <div className="trayBox">
@@ -1417,9 +1412,7 @@ function Eisen({ onKeep, back }: { onKeep: (d: Discovery) => void; back: () => v
             <div key={item} className="trayRow">
               <span className="trayName">{item}</span>
               <div className="trayDots">
-                {QUADS.map(q => (
-                  <button key={q.id} className="trayDot" style={{ background: q.color }} title={`${q.name}: ${q.sub}`} onClick={() => place(item, q.id)} />
-                ))}
+                {QUADS.map(q => <button key={q.id} className="trayDot" style={{ background: q.color }} title={`${q.name} · ${q.sub}`} onClick={() => place(item, q.id)} />)}
               </div>
             </div>
           ))}
@@ -1428,65 +1421,59 @@ function Eisen({ onKeep, back }: { onKeep: (d: Discovery) => void; back: () => v
       <div className="quadGrid">
         {QUADS.map(q => (
           <div key={q.id} className="quad" style={{ borderColor: q.color }}>
-            <div className="quadHead" style={{ color: q.color }}>{q.name}</div>
+            <div className="quadHead" style={{ color: q.color }}>{q.name} {placed[q.id].length > 0 && <span className="quadCount">{placed[q.id].length}</span>}</div>
             <div className="quadSub">{q.sub}</div>
             <div className="binChips">
-              {placed[q.id].map(c => (
-                <button key={c} className="binChip" onClick={() => unplace(c, q.id)} title="put back">{c} ×</button>
-              ))}
+              {placed[q.id].map(c => <button key={c} className="binChip pop" onClick={() => unplace(c, q.id)} title="put back">{c} ×</button>)}
             </div>
           </div>
         ))}
       </div>
-      <div className="btnRow center">
-        <button className="btn" disabled={!anyPlaced} onClick={save}>Keep today's matrix</button>
-      </div>
+      <div className="btnRow center"><button className="btn" disabled={!anyPlaced} onClick={save}>Keep today's matrix</button></div>
     </>
   );
 }
 
-function IvyLee({ onKeep, back }: { onKeep: (d: Discovery) => void; back: () => void }) {
+function IvyLee({ onDone, back }: { onDone: (d: Discovery, headline: string) => void; back: () => void }) {
   const [items, setItems] = useState<string[]>([]);
   const [input, setInput] = useState('');
-  const add = (e: React.FormEvent) => { e.preventDefault(); const v = input.trim(); if (!v || items.length >= 6) return; setItems(i => [...i, v]); setInput(''); };
+  const add = (e: React.FormEvent) => { e.preventDefault(); const v = input.trim(); if (!v || items.length >= 6 || items.includes(v)) return; setItems(i => [...i, v]); setInput(''); };
   const move = (i: number, d: number) => setItems(a => { const j = i + d; if (j < 0 || j >= a.length) return a; const c = [...a]; [c[i], c[j]] = [c[j], c[i]]; return c; });
   const remove = (i: number) => setItems(a => a.filter((_, x) => x !== i));
-
   return (
     <>
-      <ToolHead title="Ivy Lee" back={back} />
-      <p className="modeDesc">tomorrow's six things, in the only order that matters.</p>
-      <form className="quickAdd" onSubmit={add}><span className="qaPlus">+</span><input placeholder={items.length >= 6 ? 'six is the limit — that is the method' : 'add a priority...'} value={input} onChange={e => setInput(e.target.value)} disabled={items.length >= 6} /></form>
+      <div className="toolHead"><button className="linkBtn" style={{ margin: 0 }} onClick={back}>all methods</button><span className="eyebrow">IVY LEE</span></div>
+      <Explain text={CHOOSE_METHODS[1].why} />
+      <p className="modeDesc">tomorrow's six things, in the only order that matters. rank is the method.</p>
+      <form className="quickAdd" onSubmit={add}><span className="qaPlus">+</span><input disabled={items.length >= 6} placeholder={items.length >= 6 ? 'six is the limit — that is the method' : 'add a priority...'} value={input} onChange={e => setInput(e.target.value)} /></form>
       <div className="ivyList">
         {items.map((it, i) => (
           <div key={it} className="ivyRow">
-            <span className="ivyNum">{i + 1}</span>
+            <span className={`ivyNum medal${i + 1}`}>{i + 1}</span>
             <span className="ivyName">{it}</span>
-            <button className="ivyMove" onClick={() => move(i, -1)} disabled={i === 0}>↑</button>
-            <button className="ivyMove" onClick={() => move(i, 1)} disabled={i === items.length - 1}>↓</button>
+            <button className="ivyMove" disabled={i === 0} onClick={() => move(i, -1)}>↑</button>
+            <button className="ivyMove" disabled={i === items.length - 1} onClick={() => move(i, 1)}>↓</button>
             <button className="ivyMove" onClick={() => remove(i)}>×</button>
           </div>
         ))}
       </div>
-      <div className="btnRow center">
-        <button className="btn" disabled={items.length === 0} onClick={() => onKeep({ id: uid(), category: 'Choose', prompt: 'Ivy Lee — six things in true order', findings: { list: items.map((x, i) => `${i + 1}. ${x}`).join('  ·  ') }, createdAt: new Date().toISOString() })}>Keep the order</button>
-      </div>
+      <div className="btnRow center"><button className="btn" disabled={items.length === 0} onClick={() => onDone({ id: uid(), category: 'Choose', prompt: 'Ivy Lee — six things in true order', findings: { list: items.map((x, i) => `${i + 1}. ${x}`).join('  ·  ') }, createdAt: new Date().toISOString() }, items[0])}>Keep the order</button></div>
     </>
   );
 }
 
-function Buffett({ onKeep, back }: { onKeep: (d: Discovery) => void; back: () => void }) {
+function Buffett({ onDone, back }: { onDone: (d: Discovery, headline: string) => void; back: () => void }) {
   const [dump, setDump] = useState<string[]>([]);
   const [picked, setPicked] = useState<string[]>([]);
   const [input, setInput] = useState('');
   const add = (e: React.FormEvent) => { e.preventDefault(); const v = input.trim(); if (!v || dump.includes(v)) return; setDump(d => [...d, v]); setInput(''); };
   const toggle = (item: string) => setPicked(p => p.includes(item) ? p.filter(x => x !== item) : (p.length >= 5 ? p : [...p, item]));
   const avoid = dump.filter(x => !picked.includes(x));
-
   return (
     <>
-      <ToolHead title="Buffett 2-List" back={back} />
-      <p className="modeDesc">brain-dump goals, star the five that matter. the rest become avoid-at-all-costs.</p>
+      <div className="toolHead"><button className="linkBtn" style={{ margin: 0 }} onClick={back}>all methods</button><span className="eyebrow">BUFFETT 2-LIST</span></div>
+      <Explain text={CHOOSE_METHODS[2].why} />
+      <p className="modeDesc">brain-dump wishes, star exactly five. the rest become avoid-at-all-costs.</p>
       <form className="quickAdd" onSubmit={add}><span className="qaPlus">+</span><input placeholder="add a goal or want..." value={input} onChange={e => setInput(e.target.value)} /></form>
       <div className="ivyList">
         {dump.map(it => (
@@ -1499,37 +1486,82 @@ function Buffett({ onKeep, back }: { onKeep: (d: Discovery) => void; back: () =>
         ))}
       </div>
       <p className="modeDesc">{picked.length}/5 chosen</p>
-      <div className="btnRow center">
-        <button className="btn" disabled={picked.length === 0} onClick={() => onKeep({ id: uid(), category: 'Choose', prompt: 'Buffett 2-List — focus and avoid', findings: { focus: picked.join(', '), avoid: avoid.join(', ') || 'nothing' }, createdAt: new Date().toISOString() })}>Keep the two lists</button>
-      </div>
+      <div className="btnRow center"><button className="btn" disabled={picked.length === 0} onClick={() => onDone({ id: uid(), category: 'Choose', prompt: 'Buffett 2-List — focus and avoid', findings: { focus: picked.join(', '), avoid: avoid.join(', ') || 'nothing' }, createdAt: new Date().toISOString() }, picked[0])}>Keep the two lists</button></div>
     </>
   );
 }
 
-function OneThing({ onKeep, back }: { onKeep: (d: Discovery) => void; back: () => void }) {
+function OneThing({ onDone, back }: { onDone: (d: Discovery, headline: string) => void; back: () => void }) {
   const [thing, setThing] = useState('');
   const [why, setWhy] = useState('');
   return (
     <>
-      <ToolHead title="One Thing" back={back} />
+      <div className="toolHead"><button className="linkBtn" style={{ margin: 0 }} onClick={back}>all methods</button><span className="eyebrow">ONE THING</span></div>
+      <Explain text={CHOOSE_METHODS[3].why} />
       <p className="modeDesc">the single needle-mover. everything else can wait kindly.</p>
       <label className="fld">what is the one thing?<textarea value={thing} onChange={e => setThing(e.target.value)} placeholder="if today only moved this, it would be enough..." /></label>
       <label className="fld">why this one?<input value={why} onChange={e => setWhy(e.target.value)} placeholder="optional, but honest" /></label>
-      <div className="btnRow center">
-        <button className="btn" disabled={!thing.trim()} onClick={() => onKeep({ id: uid(), category: 'Choose', prompt: 'One Thing — the needle-mover', findings: { one: thing.trim(), why: why.trim() || 'because it matters' }, createdAt: new Date().toISOString() })}>Seal it</button>
-      </div>
+      <div className="btnRow center"><button className="btn" disabled={!thing.trim()} onClick={() => onDone({ id: uid(), category: 'Choose', prompt: 'One Thing — the needle-mover', findings: { one: thing.trim(), why: why.trim() || 'because it matters' }, createdAt: new Date().toISOString() }, thing.trim())}>Seal it</button></div>
     </>
   );
 }
 
 function ChooseView({ onKeep }: { onKeep: (d: Discovery) => void }) {
   const [method, setMethod] = useState<ChooseMethod | null>(null);
+  const [history, setHistory] = useStored<ChooseEntry[]>('it.choose.history', []);
+  const [sealed, setSealed] = useState<ChooseEntry | null>(null);
+  const todayEntry = history.find(h => h.date === today());
+  const streak = (() => {
+    const days = new Set(history.map(h => h.date));
+    let s = 0; const d = new Date();
+    if (!days.has(d.toISOString().slice(0, 10))) d.setDate(d.getDate() - 1);
+    while (days.has(d.toISOString().slice(0, 10))) { s++; d.setDate(d.getDate() - 1); }
+    return s;
+  })();
+
+  function finish(m: ChooseMethod, d: Discovery, headline: string) {
+    onKeep(d);
+    const entry: ChooseEntry = { date: today(), method: m, headline, findings: d.findings };
+    setHistory(h => [entry, ...h.filter(x => x.date !== today())]);
+    setSealed(entry);
+    setMethod(null);
+  }
+
   return (
     <div className="narrow" style={{ maxWidth: 860 }}>
       <h1 className="pageTitle">Choose</h1>
-      {!method && (
+
+      {sealed ? (
+        <div className="doneWrap">
+          <span className="confetti" key={sealed.date}>
+            {Array.from({ length: 16 }).map((_, i) => {
+              const h = hashN('seal' + sealed.date + i);
+              return <i key={i} style={{ left: `${6 + (h % 88)}%`, background: ['#C97B96', '#8FA98F', '#8B7BA8', '#D9B36A'][h % 4], animationDelay: `${(h % 40) / 100}s`, transform: `rotate(${h % 360}deg)` }} />;
+            })}
+          </span>
+          <img src="/mascot-celebrate.png" className="mascotImg" alt="" onError={hideImg} />
+          <span className="eyebrow">{sealed.date === today() ? 'SEALED FOR TODAY' : new Date(sealed.date + 'T12:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric' }).toUpperCase()}</span>
+          <p className="oneBig">{sealed.headline}</p>
+          <div className="sealedFindings">
+            {Object.entries(sealed.findings).map(([k, v]) => (
+              <div key={k} className="sealedRow"><span className="sealedKey">{k}</span><span className="sealedVal">{v}</span></div>
+            ))}
+          </div>
+          <div className="btnRow center"><button className="btn ghost" onClick={() => setSealed(null)}>back to methods</button></div>
+        </div>
+      ) : method === null ? (
         <>
           <p className="modeDesc">attention is a choice. pick a lens for today.</p>
+          {todayEntry && (
+            <div className="todayLens">
+              <img src="/mascot-wave.png" className="mascotImg tiny" alt="" onError={hideImg} />
+              <div>
+                <b>today you chose: {todayEntry.headline}</b>
+                <span>via {CHOOSE_METHODS.find(m => m.id === todayEntry.method)?.name}</span>
+              </div>
+              <button className="btn ghost small" onClick={() => setSealed(todayEntry)}>see it</button>
+            </div>
+          )}
           <div className="methodGrid">
             {CHOOSE_METHODS.map(m => (
               <button key={m.id} className="methodCard" onClick={() => setMethod(m.id)}>
@@ -1539,12 +1571,27 @@ function ChooseView({ onKeep }: { onKeep: (d: Discovery) => void }) {
               </button>
             ))}
           </div>
+          {history.length > 0 && (
+            <section className="chooseHistory">
+              <div className="row1"><span className="eyebrow">YOUR CHOOSING DAYS</span><span className="hint" style={{ margin: 0 }}>{streak} day streak</span></div>
+              {history.slice(0, 10).map(h => (
+                <button key={h.date} className="histRow" onClick={() => setSealed(h)}>
+                  <span className="histDate">{new Date(h.date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                  <span className="histMethod">{CHOOSE_METHODS.find(m => m.id === h.method)?.name ?? h.method}</span>
+                  <span className="histHead">{h.headline}</span>
+                </button>
+              ))}
+            </section>
+          )}
+        </>
+      ) : (
+        <>
+          {method === 'eisenhower' && <Eisen onDone={(d, h) => finish('eisenhower', d, h)} back={() => setMethod(null)} />}
+          {method === 'ivylee' && <IvyLee onDone={(d, h) => finish('ivylee', d, h)} back={() => setMethod(null)} />}
+          {method === 'buffett' && <Buffett onDone={(d, h) => finish('buffett', d, h)} back={() => setMethod(null)} />}
+          {method === 'onething' && <OneThing onDone={(d, h) => finish('onething', d, h)} back={() => setMethod(null)} />}
         </>
       )}
-      {method === 'eisenhower' && <Eisen onKeep={onKeep} back={() => setMethod(null)} />}
-      {method === 'ivylee' && <IvyLee onKeep={onKeep} back={() => setMethod(null)} />}
-      {method === 'buffett' && <Buffett onKeep={onKeep} back={() => setMethod(null)} />}
-      {method === 'onething' && <OneThing onKeep={onKeep} back={() => setMethod(null)} />}
     </div>
   );
 }
