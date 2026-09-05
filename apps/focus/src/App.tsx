@@ -1653,65 +1653,36 @@ function HomeSoft({ dateLabel, setNav }: { dateLabel: string; setNav: (id: strin
   const [tasks] = useStored<any[]>('it.tasks', []);
   const [trees] = useStored<any[]>('it.trees', []);
   const [entries] = useStored<any[]>('it.journal', []);
-  const [discoveries] = useStored<any[]>('it.discoveries', []);
 
   const openTasks = tasks.filter(t => !t.done).slice(0, 3);
-  const doneToday = tasks.filter(t => {
-    if (!t.done || !t.completedAt) return false;
-    try { return new Date(t.completedAt).toISOString().slice(0, 10) === today(); }
-    catch { return false; }
-  }).length;
-
-  const todayMinutes = trees
-    .filter(t => !t.dead)
-    .filter(t => {
-      const raw = t.createdAt ?? t.plantedAt ?? t.date;
-      if (!raw) return true;
-      try { return new Date(raw).toISOString().slice(0, 10) === today(); }
-      catch { return true; }
-    })
-    .reduce((a, t) => a + (Number(t.minutes) || 0), 0);
-
-  const journalToday = entries.some(e => {
-    try { return new Date(e.createdAt).toISOString().slice(0, 10) === today(); }
-    catch { return false; }
-  });
-
-  const promisesTotal = 3;
-  const promisesKept = Math.min(promisesTotal, doneToday + (todayMinutes > 0 ? 1 : 0) + (journalToday ? 1 : 0));
-  const rhythmPct = Math.round((promisesKept / promisesTotal) * 100);
+  const doneToday = tasks.filter(t => t.done && t.completedAt && new Date(t.completedAt).toISOString().slice(0, 10) === today()).length;
+  const todayMinutes = trees.filter(t => !t.dead && new Date(t.plantedAt).toISOString().slice(0, 10) === today()).reduce((a, t) => a + (Number(t.minutes) || 0), 0);
+  const journalToday = entries.some(e => new Date(e.createdAt).toISOString().slice(0, 10) === today());
+  const kept = (doneToday > 0 ? 1 : 0) + (todayMinutes > 0 ? 1 : 0) + (journalToday ? 1 : 0);
+  const pct = Math.round((kept / 3) * 100);
 
   const week = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    const offset = i - 3;
-    d.setDate(d.getDate() + offset);
-    return {
-      key: d.toISOString(),
-      day: d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 1),
-      num: d.getDate(),
-      today: offset === 0,
-    };
+    const d = new Date(); d.setDate(d.getDate() + (i - 3));
+    return { key: d.toISOString(), day: d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 1), num: d.getDate(), today: i === 3 };
   });
 
-  const lastKept = discoveries[0];
+  const hide = (e: React.SyntheticEvent<HTMLImageElement>) => { (e.target as HTMLImageElement).style.display = 'none'; };
 
   return (
     <div className="homeSoft">
       <section className="softHero">
+        <img src="/mascot-wave.png" className="mascotImg hero" alt="" onError={hide} />
         <span className="softDate">{dateLabel.toUpperCase()}</span>
         <h1>Hi, you <span>✦</span></h1>
-        <p>Let’s make today feel a little more like <em>you.</em></p>
-        <div className="softStars">✦ <span>✧</span> ✦</div>
-        <button className="softTinyBtn" onClick={() => setNav('focus')}>You’ve got this ♡</button>
+        <p>Let's make today feel a little more like <em>you.</em></p>
       </section>
 
       <section className="softPanel">
         <div className="softPanelHead">
-          <span>TODAY’S LITTLE LIST</span>
+          <span>TODAY'S LITTLE LIST</span>
           <button onClick={() => setNav('focus')}>open</button>
         </div>
         <h2>Make it a good one.</h2>
-
         <div className="softWeek">
           {week.map(d => (
             <div key={d.key} className={d.today ? 'today' : ''}>
@@ -1720,24 +1691,26 @@ function HomeSoft({ dateLabel, setNav }: { dateLabel: string; setNav: (id: strin
             </div>
           ))}
         </div>
-
-        <div className="softList">
-          {openTasks.length > 0 ? openTasks.map((t, i) => (
-            <button key={t.id ?? i} onClick={() => setNav('focus')}>
-              <span>{['✦', '♡', '·'][i % 3]}</span>
-              <b>{t.title}</b>
-              <small>{t.myDay ? 'my day' : t.important ? 'important' : 'gentle task'}</small>
-            </button>
-          )) : (
-            <>
-              <button onClick={() => setNav('focus')}><span>💧</span><b>Drink water</b><small>tiny care</small></button>
-              <button onClick={() => setNav('focus')}><span>🌱</span><b>Stretch softly</b><small>body first</small></button>
-              <button onClick={() => setNav('learn')}><span>📖</span><b>Learn one thing</b><small>10 minutes</small></button>
-            </>
-          )}
-        </div>
-
-        <button className="softAdd" onClick={() => setNav('focus')}>add a tiny thing</button>
+        {openTasks.length > 0 ? (
+          <>
+            <div className="softList">
+              {openTasks.map((t, i) => (
+                <button key={t.id ?? i} onClick={() => setNav('focus')}>
+                  <span>{['✦', '♡', '·'][i % 3]}</span>
+                  <b>{t.title}</b>
+                  <small>{t.myDay ? 'my day' : t.important ? 'important' : 'gentle task'}</small>
+                </button>
+              ))}
+            </div>
+            <button className="softAdd" onClick={() => setNav('focus')}>add a tiny thing</button>
+          </>
+        ) : (
+          <div className="softEmpty">
+            <img src="/mascot-think.png" className="mascotImg" alt="" onError={hide} />
+            <p>nothing here yet…</p>
+            <button className="softAdd" onClick={() => setNav('focus')}>wanna add a tiny thing?</button>
+          </div>
+        )}
       </section>
 
       <section className="softPanel softFocus">
@@ -1748,10 +1721,11 @@ function HomeSoft({ dateLabel, setNav }: { dateLabel: string; setNav: (id: strin
         <h2>One thing, gently.</h2>
         <div className="softDots">•••</div>
         <div className="softTimer">
-          <strong>{todayMinutes || 25}:00</strong>
-          <span>{todayMinutes ? `${todayMinutes} min grown today` : 'ready when you are'}</span>
+          <strong>{todayMinutes > 0 ? `${todayMinutes} min` : '25:00'}</strong>
+          <span>{todayMinutes > 0 ? 'grown today' : 'ready when you are'}</span>
         </div>
-        <button className="softPrimary" onClick={() => setNav('focus')}>start focus</button>
+        {todayMinutes === 0 && <p className="softWhisper">wanna grow your first tree today?</p>}
+        <button className="softPrimary" onClick={() => setNav('focus')}>{todayMinutes > 0 ? 'keep growing' : 'start focus'}</button>
         <p className="softWhisper">put your phone somewhere kind to future-you</p>
       </section>
 
@@ -1760,15 +1734,21 @@ function HomeSoft({ dateLabel, setNav }: { dateLabel: string; setNav: (id: strin
           <span>JOURNAL GARDEN</span>
           <button onClick={() => setNav('journal')}>write</button>
         </div>
-        <h2>What’s on your mind?</h2>
+        <h2>What's on your mind?</h2>
         <div className="softJournalRow">
           <div>
             <strong>{new Date().toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })}</strong>
-            <span>{journalToday ? 'tucked away today' : 'a blank page is waiting'}</span>
+            <span>{journalToday ? 'tucked away today ♡' : 'a blank page is waiting'}</span>
           </div>
-          <div className="softMoods">☁️ 🌤️ 🌞 ✨</div>
+          <div className="softMoods">☁️ 🌤️  ✨</div>
         </div>
-        <button className="softPrimary pale" onClick={() => setNav('journal')}>tuck it away</button>
+        {!journalToday && (
+          <div className="softEmpty small">
+            <img src="/mascot-think.png" className="mascotImg small" alt="" onError={hide} />
+            <p>wanna tuck a thought away?</p>
+          </div>
+        )}
+        <button className="softPrimary pale" onClick={() => setNav('journal')}>{journalToday ? 'read it again' : 'tuck it away'}</button>
       </section>
 
       <section className="softPanel softRhythm">
@@ -1776,24 +1756,25 @@ function HomeSoft({ dateLabel, setNav }: { dateLabel: string; setNav: (id: strin
           <span>YOUR RHYTHM</span>
           <button onClick={() => setNav('library')}>view</button>
         </div>
-        <h2>It’s adding up.</h2>
-        <div className="rhythmCircle" style={{ '--p': `${rhythmPct}%` } as React.CSSProperties}>
-          <span>{rhythmPct}%</span>
+        <h2>It's adding up.</h2>
+        <div className="rhythmCircle" style={{ '--p': `${pct}%` } as React.CSSProperties}>
+          <span>{pct}%</span>
         </div>
-        <p><b>{promisesKept} of {promisesTotal}</b> gentle promises kept today ♡</p>
+        {kept === 0 ? (
+          <p className="softWhisper">your rhythm starts with one tiny promise ♡</p>
+        ) : (
+          <>
+            <img src="/mascot-celebrate.png" className="mascotImg small" alt="" onError={hide} />
+            <p><b>{kept} of 3</b> gentle promises kept today ♡</p>
+          </>
+        )}
         <div className="softSparkLine">✦✧✦✧✦✧✦</div>
       </section>
 
       <blockquote className="softQuote">
-        “There is no right way to grow. There is only your way, <em>today.</em>”
+        "There is no right way to grow. There is only your way, <em>today.</em>"
         <span>— a note from the night sky</span>
       </blockquote>
-
-      {lastKept && (
-        <button className="softMemory" onClick={() => setNav('library')}>
-          last kept · {lastKept.category}
-        </button>
-      )}
     </div>
   );
 }
