@@ -1277,3 +1277,345 @@ body{background-image:none}
 .dock{transform:translate(-50%,140%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
 .dockHot:hover + .dock,.dock:hover,.dock:focus-within{transform:translate(-50%,0)}
 .dock .ic{width:17px;height:17px}
+
+/* ===== Soft StarryPlan-inspired Home ===== */
+.homeSoft {
+  width: min(430px, calc(100vw - 34px));
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: #4A4350;
+  padding-bottom: 28px;
+}
+
+.softHero {
+  text-align: center;
+  padding: 22px 10px 8px;
+}
+
+.softDate,
+.softPanelHead span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: .22em;
+  font-weight: 800;
+  color: #B78395;
+}
+
+.softHero h1 {
+  margin: 10px 0 4px;
+  font-family: var(--serif);
+  font-size: 42px;
+  line-height: .95;
+  color: #3F3A44;
+}
+
+.softHero h1 span {
+  color: #C97B96;
+}
+
+.softHero p {
+  color: #7C7482;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.softHero em,
+.softQuote em {
+  color: #A77FA8;
+  font-style: italic;
+}
+
+.softStars {
+  margin: 18px 0 12px;
+  color: #C97B96;
+  letter-spacing: 18px;
+  font-size: 18px;
+  opacity: .85;
+}
+
+.softStars span {
+  color: #A8A98F;
+}
+
+.softTinyBtn,
+.softAdd,
+.softPanelHead button,
+.softMemory {
+  border: none;
+  background: transparent;
+  color: #B78395;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.softTinyBtn {
+  font-family: var(--serif);
+  color: #6E6878;
+  font-size: 15px;
+}
+
+.softPanel {
+  position: relative;
+  background:
+    radial-gradient(180px 90px at 80% 0%, rgba(255, 236, 241, .75), transparent 70%),
+    #FFFFFF;
+  border: 1.4px solid #EFE6E2;
+  border-radius: 30px;
+  padding: 20px;
+  box-shadow: 0 14px 40px rgba(120, 90, 100, .08);
+  overflow: hidden;
+}
+
+.softPanel::after {
+  content: '✦';
+  position: absolute;
+  right: 18px;
+  top: 14px;
+  color: rgba(201, 123, 150, .18);
+  font-size: 28px;
+}
+
+.softPanelHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.softPanelHead button {
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #FAF3F5;
+}
+
+.softPanel h2 {
+  margin: 7px 0 15px;
+  font-family: var(--serif);
+  font-size: 24px;
+  color: #3F3A44;
+  line-height: 1.05;
+}
+
+.softWeek {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.softWeek div {
+  height: 44px;
+  border-radius: 16px;
+  background: #FBF7F5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #9B94A3;
+}
+
+.softWeek div.today {
+  background: #F7E3EA;
+  color: #A95F78;
+  box-shadow: inset 0 0 0 1px rgba(201,123,150,.18);
+}
+
+.softWeek b {
+  font-size: 10px;
+}
+
+.softWeek span {
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.softList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.softList button {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: #FFFCFB;
+  border-radius: 18px;
+  padding: 11px 12px;
+  cursor: pointer;
+  text-align: left;
+  color: #4A4350;
+  transition: transform .16s ease, background .16s ease;
+}
+
+.softList button:hover {
+  transform: translateY(-1px);
+  background: #FAF3F5;
+}
+
+.softList b {
+  font-size: 14px;
+}
+
+.softList small {
+  color: #B78395;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.softAdd {
+  width: 100%;
+  margin-top: 12px;
+  padding: 9px;
+  border-radius: 999px;
+  background: #FBF7F5;
+  color: #8A7F8E;
+}
+
+.softFocus {
+  background:
+    radial-gradient(220px 130px at 20% 0%, rgba(221,235,255,.8), transparent 72%),
+    radial-gradient(200px 110px at 90% 100%, rgba(247,227,234,.85), transparent 70%),
+    #FFFFFF;
+  text-align: center;
+}
+
+.softDots {
+  color: #C97B96;
+  letter-spacing: 8px;
+  margin: 4px 0 8px;
+}
+
+.softTimer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 4px 0 14px;
+}
+
+.softTimer strong {
+  font-family: var(--serif);
+  font-size: 42px;
+  color: #3F3A44;
+  line-height: 1;
+}
+
+.softTimer span,
+.softWhisper,
+.softJournalRow span,
+.softRhythm p {
+  color: #8A8190;
+  font-size: 13px;
+}
+
+.softPrimary {
+  border: none;
+  border-radius: 999px;
+  background: #3F3A44;
+  color: #FFFFFF;
+  font-weight: 900;
+  padding: 11px 22px;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(63,58,68,.16);
+}
+
+.softPrimary.pale {
+  background: #F7E3EA;
+  color: #A95F78;
+  box-shadow: none;
+}
+
+.softWhisper {
+  margin-top: 11px;
+  font-style: italic;
+}
+
+.softJournalRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.softJournalRow div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.softJournalRow strong {
+  font-family: var(--serif);
+  font-size: 24px;
+  color: #4A4350;
+}
+
+.softMoods {
+  font-size: 20px;
+  letter-spacing: 4px;
+  white-space: nowrap;
+}
+
+.softRhythm {
+  text-align: center;
+}
+
+.rhythmCircle {
+  --p: 0%;
+  width: 104px;
+  height: 104px;
+  margin: 6px auto 12px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #fff 58%, transparent 60%),
+    conic-gradient(#C97B96 var(--p), #F2EDEA 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rhythmCircle span {
+  font-family: var(--serif);
+  font-size: 24px;
+  color: #A95F78;
+}
+
+.softSparkLine {
+  color: #C97B96;
+  letter-spacing: 6px;
+  margin-top: 12px;
+  opacity: .65;
+}
+
+.softQuote {
+  margin: 8px 8px 0;
+  text-align: center;
+  color: #5F5866;
+  font-family: var(--serif);
+  font-size: 19px;
+  line-height: 1.55;
+}
+
+.softQuote span {
+  display: block;
+  margin-top: 9px;
+  color: #A099AA;
+  font-family: var(--sans);
+  font-size: 12px;
+}
+
+.softMemory {
+  align-self: center;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 1.4px solid #EFE6E2;
+  box-shadow: 0 8px 24px rgba(120,90,100,.08);
+}

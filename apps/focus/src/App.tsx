@@ -5,8 +5,6 @@ type Step = { id: string; text: string; done: boolean };
 type Task = { id: string; listId: string; title: string; notes: string; due: string | null; important: boolean; myDay: boolean; done: boolean; steps: Step[]; createdAt: number; completedAt: number | null };
 type List = { id: string; name: string; color: string };
 import { TOPIC_POOLS, DEEP_POOLS } from './pools';
-import { CardSwipe, type CardItem } from './components/CardSwipe';
-import { EditBadge, type BadgeConfig } from './components/EditBadge';
 import { ScheduleButton } from './components/ScheduleButton';
 import { Dock, type DockItem } from './components/Dock';
 type Discovery = { id: string; category: string; prompt: string; findings: Record<string, string>; sources?: string; folderName?: string; createdAt: string };
@@ -1650,6 +1648,156 @@ export function Icon({ name }: { name: string }) {
 }
 
 // ---------- App shell ----------
+
+function HomeSoft({ dateLabel, setNav }: { dateLabel: string; setNav: (id: string) => void }) {
+  const [tasks] = useStored<any[]>('it.tasks', []);
+  const [trees] = useStored<any[]>('it.trees', []);
+  const [entries] = useStored<any[]>('it.journal', []);
+  const [discoveries] = useStored<any[]>('it.discoveries', []);
+
+  const openTasks = tasks.filter(t => !t.done).slice(0, 3);
+  const doneToday = tasks.filter(t => {
+    if (!t.done || !t.completedAt) return false;
+    try { return new Date(t.completedAt).toISOString().slice(0, 10) === today(); }
+    catch { return false; }
+  }).length;
+
+  const todayMinutes = trees
+    .filter(t => !t.dead)
+    .filter(t => {
+      const raw = t.createdAt ?? t.plantedAt ?? t.date;
+      if (!raw) return true;
+      try { return new Date(raw).toISOString().slice(0, 10) === today(); }
+      catch { return true; }
+    })
+    .reduce((a, t) => a + (Number(t.minutes) || 0), 0);
+
+  const journalToday = entries.some(e => {
+    try { return new Date(e.createdAt).toISOString().slice(0, 10) === today(); }
+    catch { return false; }
+  });
+
+  const promisesTotal = 3;
+  const promisesKept = Math.min(promisesTotal, doneToday + (todayMinutes > 0 ? 1 : 0) + (journalToday ? 1 : 0));
+  const rhythmPct = Math.round((promisesKept / promisesTotal) * 100);
+
+  const week = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    const offset = i - 3;
+    d.setDate(d.getDate() + offset);
+    return {
+      key: d.toISOString(),
+      day: d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 1),
+      num: d.getDate(),
+      today: offset === 0,
+    };
+  });
+
+  const lastKept = discoveries[0];
+
+  return (
+    <div className="homeSoft">
+      <section className="softHero">
+        <span className="softDate">{dateLabel.toUpperCase()}</span>
+        <h1>Hi, you <span>✦</span></h1>
+        <p>Let’s make today feel a little more like <em>you.</em></p>
+        <div className="softStars">✦ <span>✧</span> ✦</div>
+        <button className="softTinyBtn" onClick={() => setNav('focus')}>You’ve got this ♡</button>
+      </section>
+
+      <section className="softPanel">
+        <div className="softPanelHead">
+          <span>TODAY’S LITTLE LIST</span>
+          <button onClick={() => setNav('focus')}>open</button>
+        </div>
+        <h2>Make it a good one.</h2>
+
+        <div className="softWeek">
+          {week.map(d => (
+            <div key={d.key} className={d.today ? 'today' : ''}>
+              <b>{d.day}</b>
+              <span>{d.num}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="softList">
+          {openTasks.length > 0 ? openTasks.map((t, i) => (
+            <button key={t.id ?? i} onClick={() => setNav('focus')}>
+              <span>{['✦', '♡', '·'][i % 3]}</span>
+              <b>{t.title}</b>
+              <small>{t.myDay ? 'my day' : t.important ? 'important' : 'gentle task'}</small>
+            </button>
+          )) : (
+            <>
+              <button onClick={() => setNav('focus')}><span>💧</span><b>Drink water</b><small>tiny care</small></button>
+              <button onClick={() => setNav('focus')}><span>🌱</span><b>Stretch softly</b><small>body first</small></button>
+              <button onClick={() => setNav('learn')}><span>📖</span><b>Learn one thing</b><small>10 minutes</small></button>
+            </>
+          )}
+        </div>
+
+        <button className="softAdd" onClick={() => setNav('focus')}>add a tiny thing</button>
+      </section>
+
+      <section className="softPanel softFocus">
+        <div className="softPanelHead">
+          <span>SOFT FOCUS</span>
+          <button onClick={() => setNav('focus')}>plant</button>
+        </div>
+        <h2>One thing, gently.</h2>
+        <div className="softDots">•••</div>
+        <div className="softTimer">
+          <strong>{todayMinutes || 25}:00</strong>
+          <span>{todayMinutes ? `${todayMinutes} min grown today` : 'ready when you are'}</span>
+        </div>
+        <button className="softPrimary" onClick={() => setNav('focus')}>start focus</button>
+        <p className="softWhisper">put your phone somewhere kind to future-you</p>
+      </section>
+
+      <section className="softPanel">
+        <div className="softPanelHead">
+          <span>JOURNAL GARDEN</span>
+          <button onClick={() => setNav('journal')}>write</button>
+        </div>
+        <h2>What’s on your mind?</h2>
+        <div className="softJournalRow">
+          <div>
+            <strong>{new Date().toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })}</strong>
+            <span>{journalToday ? 'tucked away today' : 'a blank page is waiting'}</span>
+          </div>
+          <div className="softMoods">☁️ 🌤️ 🌞 ✨</div>
+        </div>
+        <button className="softPrimary pale" onClick={() => setNav('journal')}>tuck it away</button>
+      </section>
+
+      <section className="softPanel softRhythm">
+        <div className="softPanelHead">
+          <span>YOUR RHYTHM</span>
+          <button onClick={() => setNav('library')}>view</button>
+        </div>
+        <h2>It’s adding up.</h2>
+        <div className="rhythmCircle" style={{ '--p': `${rhythmPct}%` } as React.CSSProperties}>
+          <span>{rhythmPct}%</span>
+        </div>
+        <p><b>{promisesKept} of {promisesTotal}</b> gentle promises kept today ♡</p>
+        <div className="softSparkLine">✦✧✦✧✦✧✦</div>
+      </section>
+
+      <blockquote className="softQuote">
+        “There is no right way to grow. There is only your way, <em>today.</em>”
+        <span>— a note from the night sky</span>
+      </blockquote>
+
+      {lastKept && (
+        <button className="softMemory" onClick={() => setNav('library')}>
+          last kept · {lastKept.category}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [nav, setNav] = useState<string>('home');
   const [challenge, setChallenge] = useState<{ prompt: string; category: string } | null>(null);
@@ -1725,25 +1873,7 @@ export default function App() {
 
       <main className="main2">
         {savedFlash && <div className="flash">Kept.</div>}
-        {nav === 'home' && (
-          <div style={{ maxWidth: 860, margin: '0 auto' }}>
-            <span className="eyebrow">{dateLabel.toUpperCase()}</span>
-            <h1 className="pageTitle">A quiet place to begin.</h1>
-            <CardSwipe
-              items={[
-                { id: 'focus', title: 'Focus', description: 'Plant a tree. Do the work. Build a forest.', icon: 'leaf', gradient: 'linear-gradient(135deg, #D8F0E2 0%, #A8E6CF 100%)' },
-                { id: 'learn', title: 'Learn', description: 'Spin a question, chase it for 10 minutes.', icon: 'book', gradient: 'linear-gradient(135deg, #FFE9F1 0%, #FFB6D9 100%)' },
-                { id: 'journal', title: 'Journal', description: 'Think without performing. Write to understand.', icon: 'pen', gradient: 'linear-gradient(135deg, #E6E0FF 0%, #C5B3FF 100%)' },
-                { id: 'notice', title: 'Notice', description: 'One quiet minute. Breathe with the sky.', icon: 'eye', gradient: 'linear-gradient(135deg, #FFF0D9 0%, #FFD9A8 100%)' },
-                { id: 'choose', title: 'Choose', description: 'Attention is a choice. Make it intentional.', icon: 'fork', gradient: 'linear-gradient(135deg, #F6E3EE 0%, #E8B4D9 100%)' },
-                { id: 'zoom', title: 'Zoom Out', description: 'See it from further away. Find the pattern.', icon: 'globe', gradient: 'linear-gradient(135deg, #DDEBFF 0%, #A8D4FF 100%)' },
-                { id: 'library', title: 'Library', description: 'What you have kept. What you have learned.', icon: 'mark', gradient: 'linear-gradient(135deg, #EAF7EF 0%, #B8E6D3 100%)' },
-                { id: 'revisit', title: 'Revisit', description: 'Meet your old mind. See what ripened.', icon: 'refresh', gradient: 'linear-gradient(135deg, #F3EAF3 0%, #D9C5E8 100%)' },
-              ]}
-              onSelect={(id) => setNav(id)}
-            />
-          </div>
-)}
+        {nav === 'home' && <HomeSoft dateLabel={dateLabel} setNav={setNav} />}
         {nav === 'focus' && <FocusView />}
         {nav === 'learn' && !challenge && !reflect && <LearnView onBegin={(p, c) => setChallenge({ prompt: p, category: c })} />}
         {challenge && <ChallengeView prompt={challenge.prompt} category={challenge.category} onDone={() => { setReflect(challenge); setChallenge(null); }} />}
