@@ -35,7 +35,7 @@ export const ScheduleButton = ({ onSchedule }: { onSchedule?: (text: string, dat
         >
           <div style={{ padding: 8 }}>
             <textarea
-              placeholder="What's up? (ᴗ )"
+              placeholder="What's on your mind?"
               value={text}
               onChange={(e) => setText(e.target.value)}
               style={{

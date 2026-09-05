@@ -33,13 +33,13 @@ export const Dock: React.FC<DockProps> = ({ items, onSelect, selectedId }) => {
         position: 'relative',
         display: 'flex',
         alignItems: 'flex-end',
-        gap: 14,
-        borderRadius: 24,
-        border: '2px solid #E9C9DF',
-        background: 'rgba(255,255,255,0.92)',
+        gap: 10,
+        borderRadius: 18,
+        border: '1.5px solid #EFE6E2',
+        background: 'rgba(255,255,255,0.85)',
         backdropFilter: 'blur(16px)',
-        padding: '8px 12px',
-        boxShadow: '0 12px 32px rgba(255,159,182,0.2)',
+        padding: '6px 10px',
+        boxShadow: '0 10px 30px rgba(120,90,100,0.15)',
       }}
     >
       {items.map((item) => (
@@ -68,7 +68,7 @@ const DockIcon: React.FC<{
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthSync = useTransform(distance, [-150, 0, 150], [40, 80, 40]);
+  const widthSync = useTransform(distance, [-140, 0, 140], [34, 54, 34]);
   const width = useTransform(widthSync, (v) => v);
 
   return (
@@ -88,8 +88,8 @@ const DockIcon: React.FC<{
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
-          borderRadius: 16,
-          background: selected ? 'linear-gradient(135deg, #FF9FB6, #FF7FA8)' : '#FFF6FA',
+          borderRadius: 12,
+          background: selected ? '#F7E3EA' : 'transparent', color: selected ? '#B96A85' : '#6E6878',
           transition: 'background 0.2s',
         }}
         whileHover={{ y: -4 }}
@@ -109,7 +109,7 @@ const DockIcon: React.FC<{
             width: 4,
             height: 4,
             borderRadius: '50%',
-            background: '#FF7FA8',
+            background: '#C97B96',
           }}
         />
       )}

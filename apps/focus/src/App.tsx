@@ -112,7 +112,6 @@ function HeroTree({ sp, growth, size = 150, dead }: { sp: string; growth: number
   const c = dead ? '#A39E93' : s.color;
   const g = Math.max(0.14, growth);
   const top = 92 - 52 * g;
-  const fy = 92 - 58 * g;
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" className={dead ? 'treeDead' : 'treeSway'}>
       <ellipse cx={50} cy={93} rx={24} ry={4} fill="rgba(0,0,0,0.25)" />
@@ -137,22 +136,7 @@ function HeroTree({ sp, growth, size = 150, dead }: { sp: string; growth: number
       ) : (
         <ellipse cx={50} cy={92 - 62 * g} rx={14 * g} ry={20 * g} fill={c} />
       )}
-      {dead ? (
-        <g>
-          <path d={`M43 ${fy - 1} l4 3 M47 ${fy - 1} l-4 3`} stroke="#5B4A63" strokeWidth={1.4} strokeLinecap="round" />
-          <path d={`M53 ${fy - 1} l4 3 M57 ${fy - 1} l-4 3`} stroke="#5B4A63" strokeWidth={1.4} strokeLinecap="round" />
-          <path d={`M46 ${fy + 6} Q50 ${fy + 4} 54 ${fy + 6}`} stroke="#5B4A63" strokeWidth={1.5} fill="none" strokeLinecap="round" />
-        </g>
-      ) : (
-        <g>
-          <circle cx={45} cy={fy} r={2.1} fill="#4A3B5C" />
-          <circle cx={55} cy={fy} r={2.1} fill="#4A3B5C" />
-          <path d={`M47 ${fy + 3} Q50 ${fy + 5.5} 53 ${fy + 3}`} stroke="#4A3B5C" strokeWidth={1.5} fill="none" strokeLinecap="round" />
-          <circle cx={40.5} cy={fy + 2.5} r={2.4} fill="#FF9FB6" opacity={0.75} />
-          <circle cx={59.5} cy={fy + 2.5} r={2.4} fill="#FF9FB6" opacity={0.75} />
-        </g>
-      )}
-    </svg>
+      </svg>
   );
 }
 
@@ -455,8 +439,8 @@ function TasksPage({ lists, setLists, tasks, setTasks }: {
         <section className="msTasks">
           {openTasks.length === 0 && doneTasks.length === 0 && (
             <div className="msEmpty">
-              <span>( ᴗ ) all clear!</span>
-              <p>press N or add below to catch a tiny task~</p>
+              <span>all clear for now</span>
+              <p>press N or add below</p>
             </div>
           )}
 
@@ -640,7 +624,7 @@ function ForestPage({ trees, coins }: { trees: Tree[]; coins: number }) {
           <span className="hint" style={{ margin: 0 }}>{alive.length} grown · {deadN} withered</span>
         </div>
         <div className="garden big">
-          {trees.length === 0 && <p className="hint">no trees yet... plant your first seed on the Plant page ( ᴗ )</p>}
+          {trees.length === 0 && <p className="hint">no trees yet — plant your first on the Plant page</p>}
           {[...trees].reverse().map(t => {
             const h = hashN(t.id);
             return (
@@ -941,7 +925,7 @@ function LearnView({ onBegin }: { onBegin: (p: string, c: string) => void }) {
           <div className="spinCard">
             {cardCat && !spinning && card && <span className="eyebrow">{cardCat.toUpperCase()}</span>}
             <p className={`spinText ${spinning ? 'spinBlur' : ''}`}>
-              {spinning ? cycleTxt : (card ?? (totalAvail === 0 ? 'the deck is resting~' : 'Ready.'))}
+              {spinning ? cycleTxt : (card ?? (totalAvail === 0 ? 'the deck is resting' : 'Ready.'))}
             </p>
           </div>
           {totalAvail === 0 ? (
@@ -1159,7 +1143,7 @@ function JTimeline({ entries }: { entries: Entry[] }) {
           {allTags.map(t => <button key={t} className={`chip ${tag === t ? 'on' : ''}`} onClick={() => setTag(tag === t ? null : t)}>{t}</button>)}
         </div>
       )}
-      {filtered.length === 0 && <p className="hint">nothing written yet... your page is waiting ( ᴗ )</p>}
+      {filtered.length === 0 && <p className="hint">nothing written yet</p>}
       {groups.map(g => (
         <div key={g.label} className="jMonth">
           <span className="jMonthLabel">{g.label}</span>
@@ -1708,7 +1692,7 @@ export default function App() {
         });
         window.location.reload();
       } catch {
-        window.alert('that file did not look like an Intentional backup ( ᴗ )');
+        window.alert('that file did not look like an Intentional backup');
       }
     };
     r.readAsText(file);
@@ -1725,7 +1709,7 @@ export default function App() {
       <Deco />
       <header className="topBar">
         <span className="sideBrand">
-          <svg className="mascot" width="26" height="26" viewBox="0 0 40 40"><circle cx="20" cy="22" r="14" fill="#FFD9E6" /><circle cx="15" cy="21" r="1.8" fill="#4A3B5C" /><circle cx="25" cy="21" r="1.8" fill="#4A3B5C" /><path d="M17 25 Q20 28 23 25" stroke="#4A3B5C" strokeWidth="1.6" fill="none" strokeLinecap="round" /><circle cx="11.5" cy="24" r="2.4" fill="#FF9FB6" opacity=".7" /><circle cx="28.5" cy="24" r="2.4" fill="#FF9FB6" opacity=".7" /><path d="M20 8 Q23 3 28 6 Q24 11 20 8" fill="#8FD6A8" /></svg>
+          
           Intentional
         </span>
         <span className="topDate">{dateLabel}</span>

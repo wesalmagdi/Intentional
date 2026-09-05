@@ -1242,3 +1242,38 @@ body{background-image:radial-gradient(rgba(255,159,182,.13) 1.6px,transparent 1.
 /* Enhanced dock with magnification */
 .dock{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:30}
 .dockBtn{display:none}
+
+/* ===== REFINED CUTESY PASS ===== */
+:root{
+  --bg:#FAF7F5; --surface:#FFFFFF; --surface2:#FBF6F4;
+  --line:#EFE6E2; --line2:#E5D8D3;
+  --text:#43404A; --text2:#6E6878; --muted:#9B94A3;
+  --gold:#C97B96; --gold2:#B96A85;
+  --green:#8FA98F; --green2:#7C987C;
+  --danger:#C96A6A;
+  --shadow:0 10px 30px rgba(120,90,100,.10);
+}
+body{background-image:none}
+.deco{display:none}
+.topBar{background:rgba(255,255,255,.72)}
+.sideBrand::before{content:'♥';color:var(--gold);font-size:13px}
+.pageTitle{background-image:linear-gradient(120deg,#B96A85,#8B7BA8)}
+.pageTitle::after{background:linear-gradient(90deg,var(--gold),transparent);height:2px;border-radius:1px}
+.eyebrow{background:none;border:none;padding:0;color:var(--gold);letter-spacing:.22em;font-size:10px}
+.card{border:1.5px solid var(--line);border-radius:20px;box-shadow:var(--shadow);background:#fff}
+.spinCard::before,.plantCard::before,.homeCard::before{content:none}
+.spinCard,.plantCard{outline:none}
+.btn{box-shadow:0 4px 14px rgba(201,123,150,.25)}
+.btn.ghost{border:1.5px solid var(--line)}
+.chip,.tab,.fpTab{border:1.5px solid var(--line)}
+.chip.on,.tab.on,.fpTab.on{background:var(--gold);box-shadow:none}
+.statChip{border:1.5px solid var(--line)}
+.statChip b{color:var(--gold)}
+.flash{background:var(--gold)}
+.qaPlus{color:var(--gold)}
+.msCheck{border-color:#D99BB1}
+.msCheck.checked{background:var(--gold)}
+.jPromptLine{color:var(--gold)}
+.dock{transform:translate(-50%,140%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.dockHot:hover + .dock,.dock:hover,.dock:focus-within{transform:translate(-50%,0)}
+.dock .ic{width:17px;height:17px}

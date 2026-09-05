@@ -177,12 +177,12 @@ const CarouselCard: React.FC<CarouselCardProps> = ({ item, index, x, currentInde
       <motion.button
         whileHover={{ 
           scale: 1.05,
-          boxShadow: '0 8px 24px rgba(255,127,168,0.4)',
+          boxShadow: '0 8px 24px rgba(201,123,150,0.4)',
         }}
         whileTap={{ scale: 0.95 }}
         onClick={() => onSelect(item.id)}
         style={{
-          background: 'linear-gradient(135deg, #FF9FB6 0%, #FF7FA8 100%)',
+          background: 'linear-gradient(135deg, #D99BB1 0%, #C97B96 100%)',
           color: '#fff',
           border: '2px solid rgba(255,255,255,0.5)',
           borderRadius: 999,
@@ -190,7 +190,7 @@ const CarouselCard: React.FC<CarouselCardProps> = ({ item, index, x, currentInde
           fontSize: 16,
           fontWeight: 700,
           cursor: 'pointer',
-          boxShadow: '0 6px 20px rgba(255,127,168,0.3)',
+          boxShadow: '0 6px 20px rgba(201,123,150,0.3)',
           position: 'relative',
           zIndex: 1,
           letterSpacing: '0.02em',
